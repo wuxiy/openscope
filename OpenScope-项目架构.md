@@ -710,20 +710,7 @@ openscope-distribution-v1.0.0/
 
 OpenScope 维护 Distribution BOM，而不是分别让客户管理组件版本。
 
-示例：
-
-```yaml
-distribution: 0.1.0
-
-components:
-  otel-collector: managed   # 最新稳定版
-  prometheus: managed       # > 3.x，启用原生 OTLP Receiver
-  tempo: managed            # 最新稳定版
-  loki: managed             # >= 3.0，原生 OTLP 端点 /otlp/v1/logs
-  grafana: managed          # 最新稳定版
-```
-
-每个组件锁定发布时的最新稳定版，并设硬性版本下限：Prometheus > 3.x（原生 OTLP Receiver）、Loki ≥ 3.0（原生 OTLP 日志端点）。
+每个组件在发行时锁定 exact tag + image manifest digest，并设硬性版本下限：Prometheus ≥ 3.0（原生 OTLP Receiver）、Loki ≥ 3.0（原生 OTLP 日志端点）。V0.1 候选组合与 digest 物化规则由 `docs/architecture/v0.1-standalone-contract.md` 定义；实施后唯一机器权威为 `distribution/bom.yaml`。
 
 原则：
 
@@ -745,7 +732,7 @@ components:
 
 ### V0.1
 
-目标：Spring Boot 最小可用。
+目标：首个可运行的 Spring Boot standalone pre-release，不等于生产就绪。
 
 - Java Agent；
 - OTLP；
@@ -755,31 +742,34 @@ components:
 - Loki；
 - Grafana；
 - Standalone；
-- Central；
 - 基础 Dashboard；
-- Docker Compose。
+- Logs ↔ Trace 基础关联；
+- Docker Compose；
+- 最小 CLI：start / stop / status / doctor / version。
+
+V0.1 日志只走 Java Agent Logback instrumentation → OTLP LogRecord → Collector → Loki；Central、Starter、stdout/filelog、离线交付、备份升级均不进入该里程碑。实施级范围与验收标准见 `docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md`。
 
 ### V0.2
 
 - Spring Boot Starter；
-- Resource Convention；
+- Resource Convention 的 Starter 封装与高级治理；
 - MDC；
-- Project / Site 模型；
+- Project / Site 管理模型；
 - JVM Dashboard；
 - HTTP RED；
 - Database Dashboard；
-- Logs ↔ Trace；
+- 扩展 Logs ↔ Trace；
 - Metrics ↔ Trace。
 
 ### V0.3
 
 - Alert；
 - Sampling；
-- Redaction；
+- 可配置高级 Redaction；
 - Retention；
 - Persistent Queue；
 - Offline Distribution；
-- Upgrade / Backup / Doctor CLI。
+- 完整运维 CLI：Upgrade / Backup / Restore / 深度 Doctor。
 
 ### V1.0
 
@@ -811,25 +801,6 @@ components:
 OpenScope 的最终价值不是提供新的 Telemetry Storage，而是：
 
 > **让任意一个应用，无论部署在个人服务器、公司内网、医院前置机、政务云还是分布式集群，都能以相同的 OpenTelemetry 标准获得 Metrics + Logs + Traces + APM 能力。**
-
-最终稳定架构：
-
-```text
-OpenTelemetry
-      ↓
-OpenScope Convention
-      ↓
-OpenTelemetry Collector
-      ↓
-Prometheus + Tempo + Loki
-      ↓
-Grafana
-```
-
-技术路线：
-
-> **OTel Native + Collector Centric + One Official Backend + Multiple Deployment Topologies**
-还是分布式集群，都能以相同的 OpenTelemetry 标准获得 Metrics + Logs + Traces + APM 能力。**
 
 最终稳定架构：
 

@@ -5,6 +5,7 @@
 ## Module Families（规划）
 
 ### 1. java/ — Java 接入层
+- V0.1 只含 `examples/springboot-simple/` 和固定 Java Agent manifest，不创建以下自研模块
 - `openscope-api`：Context、Project/Site Metadata、Business Span Helper
 - `openscope-spring-boot-autoconfigure`：Auto Configuration、Property Binding、Resource Mapping
 - `openscope-spring-boot-starter`：聚合用户依赖（基于官方 otel starter 封装）
@@ -16,7 +17,7 @@
 - 只产出 YAML 配置模板与 BOM 引用，不含服务代码
 
 ### 3. distribution/ — 发行版装配
-- `standalone/ | central/ | distributed/` 各自 docker-compose + .env 模板
+- V0.1 只建立 `standalone/` docker-compose + `.env.example`；`central/ | distributed/` 在各自需求批准后创建
 - 版本以 BOM 为准；禁止锁定 BOM 之外的版本号
 
 ### 4. grafana/ — 可视化资产
@@ -24,7 +25,7 @@
 - Dashboard 变量固定六元组：site/environment/project/namespace/service/instance
 
 ### 5. cli/ — 运维入口
-- V0.x 为 shell 脚本包装 docker compose（init/start/stop/status/doctor/backup/upgrade）
+- V0.1 为 shell 脚本包装 docker compose（start/stop/status/doctor/version）；init/backup/restore/upgrade 后续另立需求
 - Go CLI 收敛待命令面稳定后；doctor 必须检测 agent+starter 叠加冲突
 
 ## Dependency Direction（必须保持）
@@ -43,4 +44,4 @@ cli/* ──▶ distribution/*（CLI 不直接改组件版本）
 
 ## Test Ownership
 
-java/* → Maven 单测 + example 集成验证；distribution/* → mission-driver distribution test；grafana/* → provisioning 加载检查（doctor 内置）。
+examples/* → Maven 单测 + 真实后端集成验证；distribution/* → Compose/上游配置校验 + `tools/verify-v0.1.sh`；grafana/* → Provisioning API 检查 + 人工关联点验。mission-driver demo 不属于产品验收。

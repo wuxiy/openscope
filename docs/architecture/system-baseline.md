@@ -21,7 +21,7 @@ distributed  Local Collector(persistent queue) → Gateway Collector(routing/red
 | 协议 | OTLP gRPC / HTTP | — |
 | Java 自动埋点 | 模式 A javaagent / 模式 B openscope-spring-boot-starter（二选一） | 最新稳定 |
 | Data Plane | opentelemetry-collector-contrib | 最新稳定版 |
-| Metrics | Prometheus（原生 OTLP Receiver） | > 3.x |
+| Metrics | Prometheus（原生 OTLP Receiver） | ≥ 3.0 |
 | Traces | Grafana Tempo | 最新稳定 |
 | Logs | Grafana Loki（原生 `/otlp/v1/logs`，TSDB schema v13） | ≥ 3.0 |
 | UI / Alert | Grafana Provisioning + Managed Alerts | 最新稳定 |
@@ -34,10 +34,14 @@ distributed  Local Collector(persistent queue) → Gateway Collector(routing/red
 - Micrometer 存量项目允许 Prometheus 直接 scrape actuator（不必绕 Collector）
 - Tail Sampling 在 V1.x 于 Gateway 引入；此前 Local 默认 100% 上传
 - SLO 最小实现 = Recording Rule + burn rate 告警（V1.0）
+- V0.1 owner contract = `docs/architecture/v0.1-standalone-contract.md`；只实施 standalone + Java Agent + OTLP 三信号 + 基础关联 Dashboard + 最小 CLI
+- V0.1 日志唯一通路 = Java Agent Logback instrumentation → OTLP LogRecord → Collector → Loki；stdout/filelog 延后
 
 ## Testing Stack（规划）
 
 Unit（Starter/config/redaction 规则）→ Integration（springboot-simple/-postgresql/-redis/-kafka 示例验证端到端落库）→ Distribution Test（standalone 安装/升级/备份为必测最低集）。
+
+V0.1 完整 runtime/distribution acceptance 必须在 `root@172.16.65.59` 的隔离 workdir 与 Compose project 中执行；共享主机保护与环境事实以 `docs/architecture/v0.1-standalone-contract.md` 为准。
 
 ## Stable Rules
 

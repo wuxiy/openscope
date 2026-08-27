@@ -14,6 +14,8 @@ Keep it current enough to route common work. Do not turn it into a full architec
 | ------------ | -------- | --------- | -------------- | ------ |
 | 产品定位与目标   | `README.md`, `OpenScope-项目架构.md` | 拓扑模型/Dashboard 模型/演进路线 | 2026-08-27 | high |
 | 技术基线权威     | `OpenScope-技术架构.md` | 选型/BOM §20/仓库结构 §22/管线 §10 | 2026-08-27 | high |
+| V0.1 实施输入     | `docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md`, `docs/architecture/v0.1-standalone-contract.md` | standalone 范围、候选 BOM、信号/安全/SSH 开发机合同 | 2026-08-28 | high |
+| V0.1 执行与验收   | `docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md`, `docs/testing/v0.1-acceptance-checklist.md` | plan 仍为 draft，实施前需 human review | 2026-08-28 | high |
 | 引擎入口       | `tools/mission-driver.sh` | AGE mission 执行引擎 shim | 2026-08-27 | high |
 | Mission 定义    | `missions/{base,demo,onboarding}.json` | extends 关系：onboarding→base | 2026-08-27 | high |
 
@@ -21,9 +23,9 @@ Keep it current enough to route common work. Do not turn it into a full architec
 
 | Task Type           | Start Here | Then Check | Verification | Last Verified  | Confidence |
 | ------------------- | ---------- | ---------- | ------------ | -------------- | ------ |
-| 调整组件版本策略      | `OpenScope-技术架构.md` §20 | `OpenScope-项目架构.md` §13 | `grep -n "minVersion\|3.x\|3.0"` 两份同步 | 2026-08-27 | high |
-| 调整 Collector 管线  | 技术架构 §10 | §3.4/§3.5 版本前提 | 人工 review（无 CI） | 2026-08-27 | high |
-| 新增模块/目录规划     | 技术架构 §22（单一权威） | 项目架构 §14 只引用不复列 | 占位符 grep | 2026-08-27 | high |
+| 调整组件版本策略      | `OpenScope-技术架构.md` §20 | `OpenScope-项目架构.md` §13、V0.1 owner contract | `./tools/verify-docs.sh` + BOM check | 2026-08-27 | high |
+| 调整 Collector 管线  | 技术架构 §10 | V0.1 owner contract Signal Contracts | `./tools/verify-docs.sh`；出码后执行上游配置校验 | 2026-08-27 | high |
+| 新增模块/目录规划     | 技术架构 §22（单一权威） | 项目架构 §14 只引用不复列 | `./tools/verify-docs.sh` | 2026-08-27 | high |
 | 修订安全/脱敏设计    | 技术架构 §12 | 项目架构 §11.1 三道防线 | 交叉引用检查 | 2026-08-27 | high |
 | AGE 文档操作         | `AGENTS.md` → `docs/index.md` | 对应 owner doc | `./tools/mission-driver.sh list` | 2026-08-27 | high |
 
@@ -46,4 +48,4 @@ Update this file when a change creates a new major entry point, moves common cod
 
 If a listed path is missing, placeholders remain, or live imports contradict this map, do not treat the map as authority. Verify with the live repo, then update the map or mark the row low confidence before implementation.
 
-V0.1 出现代码后必须重写本文件：补充 java/、distribution/、grafana/、cli/ 等真实路径。
+V0.1 Phase 0/1 出现代码后必须重写本文件：用真实 Maven、distribution、grafana、cli、examples 与验证入口替换规划期路由。

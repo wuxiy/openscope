@@ -131,7 +131,7 @@ Prometheus 作为 V1 指标数据库：
 - Grafana 支持成熟；
 - 单机足够覆盖当前规模。
 
-OpenScope 锁定 **Prometheus > 3.x**：Metrics 通过原生 OTLP Receiver（`--web.enable-otlp-receiver`）直接接收 Collector 的 OTLP 推送，与应用侧 Trace/Log 链路完全统一，不再依赖 `prometheusremotewrite` exporter。
+OpenScope 锁定 **Prometheus ≥ 3.0**：Metrics 通过原生 OTLP Receiver（`--web.enable-otlp-receiver`）直接接收 Collector 的 OTLP 推送，与应用侧 Trace/Log 链路完全统一，不再依赖 `prometheusremotewrite` exporter。
 
 Mimir 仅在真正出现以下需求时考虑：
 
@@ -357,21 +357,19 @@ serviceId
 
 ## 7. Logging 架构
 
-推荐应用日志：
+V0.1 推荐应用日志通路：
 
 ```text
-Spring Boot
-   ↓
-Logback JSON
-   ↓
-stdout / file
-   ↓
+Spring Boot Logback event
+   ↓ Java Agent logback appender instrumentation
+OTLP LogRecord（标准 trace_id / span_id 字段）
+   ↓ OTLP/HTTP
 OTel Collector
-   ↓
+   ↓ Loki native OTLP
 Loki
 ```
 
-日志结构：
+V0.1 不使用 stdout/filelog 或 Docker JSON 日志采集；这些路径需要独立的文件发现、轮转、权限和重复采集合同，后续另立需求。概念日志结构：
 
 ```json
 {
@@ -478,7 +476,6 @@ processors:
   resource:
   attributes:
   transform:
-  filter:
   batch:
 
 exporters:
@@ -495,7 +492,6 @@ service:
         - resource
         - attributes
         - transform
-        - filter
         - batch
       exporters:
         - otlp/tempo
@@ -515,7 +511,7 @@ service:
         - memory_limiter
         - resource
         - attributes
-        - filter
+        - transform
         - batch
       exporters:
         - otlphttp/loki
@@ -523,11 +519,13 @@ service:
 
 版本前提（写入 Distribution BOM，镜像不得低于以下版本）：
 
-- **Prometheus > 3.x**：Metrics 走原生 OTLP Receiver（`--web.enable-otlp-receiver`），Collector 直接 `otlphttp` 推送；不再默认使用 `prometheusremotewrite` exporter。
+- **Prometheus ≥ 3.0**：Metrics 走原生 OTLP Receiver（`--web.enable-otlp-receiver`），Collector 直接 `otlphttp` 推送；不再默认使用 `prometheusremotewrite` exporter。
 - **Loki ≥ 3.0**：Logs 走原生 OTLP 端点（`/otlp/v1/logs`）；社区 `lokiexporter` 已废弃移除，禁止采用旧接入方式。
 - Tempo、Collector、Grafana 均锁定当前最新稳定版。
 
 实际配置以 OpenScope Distribution 测试版本为准。
+
+V0.1 仅使用已裁决的 `attributes`/`transform` 进行已知敏感 key 删除，并在 BOM 元数据记录每个 Collector component 的逐信号 stability；不得把 alpha redaction/filter 能力包装成生产合规承诺。精确端点、Resource 提升和 processor 顺序见 `docs/architecture/v0.1-standalone-contract.md`。
 
 ---
 
@@ -663,6 +661,8 @@ docker-compose
 - 政务；
 - 医院；
 - 开发测试。
+
+V0.1 standalone 的信任边界是单机 loopback：宿主机只暴露 `127.0.0.1:3000/4317/4318`，Prometheus/Tempo/Loki 管理端口只在 Compose 网络可见；Grafana 密码由未提交 `.env` 提供且默认/空密码阻断启动。该边界不得外推到 Central/Distributed；跨网络部署必须另行设计认证、TLS/mTLS 和租户隔离。
 
 ---
 
@@ -868,32 +868,12 @@ OpenScope 统一锁定组件版本。每个 Distribution 发布时锁定**各组
 | 组件 | 版本下限 | 关键前提 |
 |---|---|---|
 | opentelemetry-collector-contrib | 最新稳定版 | OTLP gRPC/HTTP、otlphttp exporter |
-| Prometheus | > 3.x | 原生 OTLP Receiver（`--web.enable-otlp-receiver`） |
+| Prometheus | ≥ 3.0 | 原生 OTLP Receiver（`--web.enable-otlp-receiver`） |
 | Loki | ≥ 3.0 | 原生 OTLP 端点 `/otlp/v1/logs`；TSDB schema v13 |
 | Tempo | 最新稳定版 | TraceQL |
 | Grafana | 最新稳定版 | Provisioning |
 
-示例：
-
-```yaml
-openscope:
-  version: 0.1.0
-
-components:
-  collector:
-    version: ${managed}   # 最新稳定版
-    minVersion: 0.120+    # 以发布时为准
-  prometheus:
-    version: ${managed}
-    minVersion: 3.x
-  tempo:
-    version: ${managed}
-  loki:
-    version: ${managed}
-    minVersion: 3.0
-  grafana:
-    version: ${managed}
-```
+V0.1 的 exact candidate tag、Java Agent SHA-256 与 digest 物化规则见 `docs/architecture/v0.1-standalone-contract.md`。`distribution/bom.yaml` 落地后是唯一机器权威，Compose 只能使用 `tag@sha256:digest`；未解析 digest 的候选版本不得启动。
 
 版本策略：
 
@@ -922,6 +902,8 @@ openscope upgrade
 openscope version
 ```
 
+V0.1 只承诺 `start / stop / status / doctor / version`；其余命令随对应需求和验收合同进入后续里程碑。
+
 CLI 负责：
 
 - 环境检查；
@@ -940,11 +922,13 @@ CLI 负责：
 
 ```text
 openscope-observability/
+├── pom.xml / mvnw / .mvn/
 ├── java/
 │   ├── openscope-api/
+│   ├── openscope-spring-boot-autoconfigure/
 │   ├── openscope-spring-boot-starter/
 │   ├── openscope-logback/
-│   └── examples/
+│   └── openscope-test/
 │
 ├── collector/
 │   ├── base/
@@ -954,25 +938,25 @@ openscope-observability/
 │   └── templates/
 │
 ├── distribution/
+│   ├── bom.yaml
 │   ├── standalone/
-│   ├── central/
-│   └── distributed/
+│   ├── central/       # 后续需求批准后创建
+│   └── distributed/   # 后续需求批准后创建
 │
 ├── grafana/
 │   ├── dashboards/
-│   ├── datasources/
+│   ├── provisioning/
 │   └── alerts/
-│
-├── deployment/
-│   ├── docker-compose/
-│   ├── helm/
-│   └── kubernetes/
 │
 ├── cli/
 ├── examples/
+├── agents/
+├── tools/
 ├── docs/
 └── README.md
 ```
+
+V0.1 只创建 `distribution/standalone`、`grafana`、`cli`、`examples/springboot-simple`、`agents/java` 和验证工具；Java 自研模块、Central/Distributed、Helm/Kubernetes 在各自需求批准后再创建，禁止为了目录完整预置空模块。
 
 ---
 
@@ -1236,12 +1220,6 @@ Odigos / eBPF
 - 个人项目；
 - 家庭自托管服务；
 - 公司内部系统；
-- Data-OS；
-- 医院项目；
-- 政务系统；
-- 完全内网环境；
-- 未来多语言与大规模部署。
-��部系统；
 - Data-OS；
 - 医院项目；
 - 政务系统；

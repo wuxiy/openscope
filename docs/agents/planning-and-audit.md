@@ -34,4 +34,4 @@
 
 没有第二 reviewer/subagent 时，solo cold-replay 只对 **non-protected 且 non-high-risk** 的 plan 有效，plan 中 MUST 记录使用了 solo review 并注明局限。Protected areas、未决产品风险、source-of-truth 冲突仍要求 human/subagent review，否则保持 open。
 
-本项目当前 reviewer availability = `subagent`（见 `docs/context/ai-autonomy-policy.md`）。
+本项目当前 reviewer availability = `human`（见 `docs/context/ai-autonomy-policy.md`）。created plan 必须由 human 独立评审后才能从 `draft` 进入 `active`。

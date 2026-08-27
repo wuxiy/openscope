@@ -18,7 +18,7 @@ OpenScope 是一个 **OpenTelemetry Native Observability Distribution**：让任
 ## Constraints That Must Stay True
 
 - 应用只依赖 OpenTelemetry API/SDK/Agent + OTLP Endpoint，不绑定具体后端
-- V1 只正式维护一套后端（Prometheus >3.x / Tempo / Loki ≥3.0 / Grafana）；其余后端仅保留扩展点
+- V1 只正式维护一套后端（Prometheus ≥3.0 / Tempo / Loki ≥3.0 / Grafana）；其余后端只在第二个真实集成出现后建立扩展 seam
 - 版本策略：一个 OpenScope 发行版绑定一组组件版本（BOM），发布时取最新稳定版并设硬性下限
 - 三种部署拓扑（standalone/central/distributed）共用同一套技术栈，业务场景与技术拓扑解耦
 - 数据最小化 + 脱敏三道防线；遥测跨网络域前必须完成前两道防线
@@ -28,9 +28,9 @@ OpenScope 是一个 **OpenTelemetry Native Observability Distribution**：让任
 
 自研 Trace/Metrics/Logs 存储、查询引擎、Java Agent、OTLP 协议、Dashboard 引擎、完整 APM UI；同时维护 SkyWalking/SigNoz/OpenObserve 多套后端；第一天引入 Mimir/Kafka。
 
-## Success Criteria for First Production Milestone
+## Success Criteria for First Runnable Pre-release
 
-《项目架构》§15 V0.1：Spring Boot 最小可用——javaagent 接入 → OTLP → Collector → P/T/L/Grafana standalone compose 套件 + 基础 Dashboard，可通过 `openscope` CLI（脚本形态）一键起停。
+《项目架构》§15 V0.1：Spring Boot 最小可用——javaagent 接入 → OTLP 三信号 → Collector → P/T/L/Grafana standalone compose 套件 + 基础关联 Dashboard，可通过 `openscope` CLI（脚本形态）起停、查询状态和 doctor。V0.1 不宣称生产就绪。
 
 ## Required Human Decision Points
 

@@ -24,9 +24,8 @@ The default level is `implement` for work items with no explicit label. The defa
 
 ## Reviewer Availability
 
-Set one value for the copied project:
-
-- Reviewer availability: `<human | subagent | none>`
+- Reviewer availability: `human`
+- Current reviewer: cywu
 
 If this value is still a placeholder, treat reviewer availability as `none` and treat protected-area or high-risk plans as blocked until human/subagent review is configured.
 
@@ -70,6 +69,8 @@ If this table still contains placeholders, AI must treat payment, auth/permissio
 | 安全与脱敏策略        | plan-first | 三道防线一致性检查 + owner doc 更新 |
 | 离线交付包 / 安全部署脚本 | ask first  | owner doc + 隔离环境验证记录 |
 | 未来代码落地后的 DB/schema | plan-first | owner doc + tests |
+
+Authorization record: cywu 于 2026-08-27 直接要求“完成实施准入条件，然后进行 V0.1 的实施计划和验收清单”，该指令授权本轮收敛 V0.1 BOM 候选、版本下限表述、standalone 安全/脱敏 owner contract 与 draft plan；它不等于通过独立 draft review，也不授权在计划仍为 `draft` 时开始实施。
 
 其余领域（文档撰写、dashboard 定义草案、CLI 脚本骨架、示例应用）默认无保护区域。
 

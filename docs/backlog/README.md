@@ -10,9 +10,9 @@ The backlog is not a replacement for requirements, owner docs, or plans. It only
 
 | Priority | Item            | Requirement                | Owner Doc            | Plan                        | Status              | AI Autonomy | Blocker                              | Last Checked   |
 | -------- | --------------- | -------------------------- | -------------------- | --------------------------- | ------------------- | ----------- | ------------------------------------ | -------------- |
-| P0       | V0.1 最小 standalone 发行版（collector+P/T/L/Grafana compose，版本按 BOM 下限锁最新稳定） | `docs/requirements/<待从项目架构 §15 V0.1 综合产出>` | `OpenScope-技术架构.md` §10/§20、`docs/architecture/system-baseline.md` | none（需先走需求综合） | `needs-requirement` | `plan-first` | 实现级 requirement 未产出 | 2026-08-27 |
-| P1       | springboot-simple 示例接入验证（模式 A javaagent 端到端进 Tempo/Prometheus/Loki） | 同上依赖 P0 | `docs/architecture/module-boundaries.md` java/* | none | `needs-design` | `plan-first` | 依赖 P0 落地 | 2026-08-27 |
-| P2       | CLI shell 脚本骨架（start/stop/status/doctor 包装 compose） | 待定 | `docs/architecture/module-boundaries.md` cli/* | none | `idea` | `research-only` | 命令面未收敛 | 2026-08-27 |
+| P0       | V0.1 standalone 发行版（三信号闭环 + 基础 Dashboard + 最小 CLI） | `docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md` | `docs/architecture/v0.1-standalone-contract.md` | `docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md` | `in-progress` | `plan-first` | human draft review；开发机 Registry/manifest 路径；Phase 0 解析 digest | 2026-08-28 |
+| P1       | Central 拓扑与跨网络安全 | 待 V0.1 验收后综合 | `OpenScope-技术架构.md` §14.2/§17 | none | `idea` | `ask-first` | 依赖 P0 关闭；认证/TLS/租户合同未建立 | 2026-08-27 |
+| P2       | Spring Boot Starter 与自研 Java 模块 | 待 V0.1 验收和真实 Agent 缺口后综合 | `docs/architecture/module-boundaries.md` java/* | none | `idea` | `plan-first` | 依赖 P0 关闭与真实需求证据 | 2026-08-27 |
 
 后续切片从《OpenScope-项目架构》§15 演进路线推导；V0.2/V0.3 内容在 V0.1 验收后再行分解。
 

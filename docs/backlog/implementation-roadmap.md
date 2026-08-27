@@ -1,99 +1,16 @@
 # Implementation Roadmap
 
-> Last Updated: <YYYY-MM-DD>
-> Source: `docs/requirements/<path>`, `docs/design/*.md`
+> Last Updated: 2026-08-27
+> Status Authority: `docs/backlog/README.md`
 
-## Purpose
+本项目不在此维护第二份实施状态表，避免与 backlog 和 created plan 漂移。
 
-This file is the global status index from design to implementation. After reading it, an AI or maintainer knows what is not started, ready, or completed without re-walking every doc and the codebase.
+当前执行顺序：
 
-It contains no implementation detail. Each `ready` work item has been draft-reviewed and is queued for implementation.
+1. `docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md` 通过独立 human draft review。
+2. Phase 0 解析候选 BOM 的 multi-arch manifest digest，建立真实 Maven/验证入口。
+3. 按 Phase 1–4 完成 standalone、三信号、Grafana 关联和 doctor。
+4. Phase 5 执行完整验收与独立 closure audit。
+5. V0.1 关闭后，才综合 Central/Distributed 和 Starter 的后续需求。
 
-> This roadmap is optional. See `docs/backlog/00-roadmap-authoring-guide.md` for authoring and update rules. Small projects can delete this file and rely on the backlog table alone.
-
-## Status Values
-
-| Status | Meaning |
-| --- | --- |
-| `todo` | Not started |
-| `ready` | Draft-reviewed, queued for implementation |
-| `done` | Completed and passed closure audit |
-
-## Framework / Platform Reuse
-
-Capabilities already provided by the stack, so the project does not rebuild them:
-
-| Capability | Provided by | Notes |
-| --- | --- | --- |
-| <capability> | <module/package/service> | <already-introduced / not-introduced> |
-
-## Current Baseline
-
-**Already implemented:**
-
-- <summary of what exists>
-
-**Main gaps:**
-
-- <summary of the main gaps>
-
----
-
-## Milestones
-
-### Milestone 1 — <name>
-
-| Work Item | Status | Owner Doc | Dependencies | Reuse |
-| --- | --- | --- | --- | --- |
-| <work item> | `todo` | `docs/design/<path>` | — | — |
-
-### Milestone 2 — <name>
-
-| Work Item | Status | Owner Doc | Dependencies | Reuse |
-| --- | --- | --- | --- | --- |
-| <work item> | `todo` | `docs/design/<path>` | — | — |
-
----
-
-## Work Item Details
-
-### <work item>
-
-> Status: see Milestones table above
-
-**Goal:** <one sentence>
-
-**Delivery scope:**
-
-- <short list>
-
-**Out of scope:** <optional>
-
-**Modules / areas:** <optional>
-
----
-
-## Dependency Graph
-
-```mermaid
-graph TD
-    M1WI1["M1 / <work item>"]
-```
-
-## Cross-Cutting
-
-| Concern | Notes |
-| --- | --- |
-| Error handling | <convention> |
-| Permissions | <convention> |
-| Testing | <convention> |
-| Owner-doc sync | update design/architecture when a work item closes |
-| Dev log | update `docs/logs/` after each implementation |
-
-## Rule
-
-- This file is a status index and coarse-grained split, not an implementation specification.
-- Each `ready` work item has been draft-reviewed and is queued for implementation.
-- Status lives on work items only; a milestone never carries a status.
-- Work-item status changes update the Milestones table only.
-- AI takes the first `todo` work item in order, implements it automatically (humans do not review individual implementation), and writes it back to `done` on closure audit. See `docs/backlog/00-roadmap-authoring-guide.md` (Containment, Closed Loop).
+工作项状态、autonomy 与 blocker 只更新 `docs/backlog/README.md`；实施细节、证明命令和 closure gates 只更新对应 plan。
