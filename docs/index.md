@@ -88,6 +88,7 @@ Skills select the work method. They do not replace requirements, design, archite
 
 ## Directory Roles
 
+- `docs/agents/` - agent 执行规则层：task routing、workflow、planning & audit、docs maintenance（根入口 AGENTS.md）
 - `docs/process/` - workflow and operating process documents
 - `docs/context/` - mandatory AI context, owner precedence, and project-wide conventions
 - `docs/backlog/` - prioritized candidate work, AI-ready next actions, and an optional roadmap when milestone-level progress is needed
