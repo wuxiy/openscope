@@ -1,0 +1,203 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+/dev/mapper/cs-root   79G   69G   11G  88% /
+--ports--
+LISTEN 0      4096                     127.0.0.1:13001      0.0.0.0:*          
+LISTEN 0      4096                     127.0.0.1:4317       0.0.0.0:*          
+LISTEN 0      4096                     127.0.0.1:4318       0.0.0.0:*          
+non-openscope container snapshot (before):
+138de8592b40 trusting_dirac Up 3 hours
+e1f20ec19b56 data-os-dev-mpi-service-1 Up 13 hours (healthy)
+95f5f1f77a65 data-os-dev-data-api-1 Up 20 hours (healthy)
+e5cf57f6fc81 data-os-dev-control-plane-1 Up 20 hours (healthy)
+e3f54a9fac21 data-os-dev-ai-ready-service-1 Up 25 hours (healthy)
+77a3a52417ab medical-platform-openmetadata-1 Up 25 hours (healthy)
+035a4475ac2c data-os-dev-quality-runner-1 Up 7 days (healthy)
+6e8a365c219c data-os-dev-seatunnel-master-1 Up 7 days (healthy)
+398fe653e2c0 data-os-dev-portal-1 Up 20 hours
+0d035843bb51 forgeops-gateway-1 Up 8 days
+33627c8fea4d multica-backend-1 Up 9 days
+b30b1032b6e7 hapi-mdm-spike Up 9 days
+26e91847321c multica-frontend-1 Up 13 days
+613504ea1a8c data-os-dev-rustfs-1 Up 2 weeks (healthy)
+84ba69f09d41 data-os-dev-scheduler-token-rotator-1 Up 2 weeks
+84937742facd nervous_ishizaka Up 2 weeks
+e7a272178508 data-os-dev-notification-receiver-1 Up 2 weeks (healthy)
+56b27c72a679 data-os-dev-dolphinscheduler-worker-1 Up 2 weeks (healthy)
+568c800e5201 data-os-dev-dolphinscheduler-api-1 Up 2 weeks (healthy)
+76363f5f33ed data-os-dev-dolphinscheduler-master-1 Up 2 weeks (healthy)
+3635879474e2 data-os-dev-dolphinscheduler-alert-1 Up 2 weeks (healthy)
+5d18386d2a75 data-os-dev-dolphinscheduler-postgresql-1 Up 2 weeks (healthy)
+d4549553f838 magicops-console Up 3 weeks (healthy)
+facc3098edb1 medical-platform-gateway-1 Up 3 weeks
+6a98a5f8843d medical-platform-nifi-1 Up 3 weeks
+6124916d73b3 medical-platform-superset-1 Up 8 days (healthy)
+d0944ef24e1d minifi-edge Up 7 days
+d5d21f901019 dbgpt Up 4 weeks
+0ae7492b6654 medical-platform-keycloak-1 Up 4 weeks
+c630e68482f0 medical-platform-mysql-1 Up 4 weeks (healthy)
+9cf644d8fb62 medical-platform-elasticsearch-1 Up 4 weeks (healthy)
+382cc12e1e4c medical-platform-keycloak-db-1 Up 4 weeks (healthy)
+ca9b72a0d0c2 jpom-server Up 4 weeks (healthy)
+fe44b41e69dd multica-postgres-1 Up 4 weeks (healthy)
+== payload sync (017b33110e9c363c9a13b0f97935867d7b909696) ==
+payload transferred
+agent uploaded -> /root/workspace/openscope-v0.1/dependencies/opentelemetry-javaagent.jar
+agent sha (expect bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba):
+bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba
+  ok digest match pom.xml
+  ok digest match distribution/bom.yaml
+  ok digest match distribution/standalone/docker-compose.yml
+  ok digest match tools/verify-v0.1.sh
+  ok digest match cli/openscope
+  ok digest match examples/springboot-simple/src/main/java/dev/openscope/sample/ProbeController.java
+  ok digest match grafana/dashboards/overview/openscope-overview.json
+== env ==
+== remote execution ==
+-- grafana meta reset --
+openscope-v01_grafana-data
+grafana-meta-reset
+-- resolve-bom --
+  resolved prometheus prometheus/prometheus@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+curl: (28) Failed to connect to auth.docker.io port 443: Connection timed out
+  resolved tempo grafana/tempo@sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+curl: (28) Failed to connect to auth.docker.io port 443: Connection timed out
+  resolved loki grafana/loki@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+curl: (28) Failed to connect to auth.docker.io port 443: Connection timed out
+  resolved grafana grafana/grafana@sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+BOM updated. Run './tools/resolve-bom.sh --check' to verify.
+-- bom check --
+OpenScope BOM resolver — /root/workspace/openscope-v0.1/distribution/bom.yaml
+  ok otelcol-contrib sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+  ok prometheus sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+  ok tempo sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+  ok loki sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+  ok grafana sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+BOM digest check PASSED
+-- compose config --
+compose-config-ok
+-- verify-docs --
+[verify-docs] structure:
+  ok README.md
+  ok OpenScope-项目架构.md
+  ok OpenScope-技术架构.md
+  ok distribution/bom.yaml
+  ok distribution/standalone/docker-compose.yml
+  ok distribution/standalone/.env.example
+  ok distribution/standalone/config/collector/collector.yaml
+  ok distribution/standalone/config/prometheus/prometheus.yml
+  ok distribution/standalone/config/tempo/tempo.yaml
+  ok distribution/standalone/config/loki/loki.yaml
+  ok grafana/provisioning/datasources/prometheus.yml
+  ok grafana/provisioning/datasources/tempo.yml
+  ok grafana/provisioning/datasources/loki.yml
+  ok grafana/provisioning/dashboards/dashboards.yml
+  ok grafana/dashboards/overview/openscope-overview.json
+  ok cli/openscope
+  ok agents/java/manifest.yaml
+  ok tools/resolve-bom.sh
+[verify-docs] placeholder & forbidden literal scan:
+  ok no 'latest' image references in distribution configs
+  ok no default admin password in tracked config
+  ok example password only in .env.example
+[verify-docs] PASSED
+-- mvnw verify --
+jar present, skip remote build (B2 verified locally; Maven Central may be unreachable from host)
+-- cli start --
+ Network openscope-v01_openscope-net Creating 
+ Network openscope-v01_openscope-net Created 
+ Volume openscope-v01_grafana-data Creating 
+ Volume openscope-v01_grafana-data Created 
+ Container openscope-v01-collector Creating 
+ Container openscope-v01-loki Creating 
+ Container openscope-v01-prometheus Creating 
+ Container openscope-v01-grafana Creating 
+ Container openscope-v01-tempo Creating 
+ Container openscope-v01-collector Created 
+ Container openscope-v01-grafana Created 
+ Container openscope-v01-loki Created 
+ Container openscope-v01-prometheus Created 
+ Container openscope-v01-tempo Created 
+ Container openscope-v01-collector Starting 
+ Container openscope-v01-tempo Starting 
+ Container openscope-v01-loki Starting 
+ Container openscope-v01-prometheus Starting 
+ Container openscope-v01-grafana Starting 
+ Container openscope-v01-collector Started 
+ Container openscope-v01-prometheus Started 
+ Container openscope-v01-loki Started 
+ Container openscope-v01-grafana Started 
+ Container openscope-v01-tempo Started 
+[1;32m[openscope][0m stack started: collector prometheus tempo loki grafana
+-- cli status --
+NAME                       IMAGE                                                                                                                                                                     COMMAND                  SERVICE      CREATED          STATUS         PORTS
+openscope-v01-collector    ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc   "/otelcol-contrib --…"   collector    10 seconds ago   Up 9 seconds   127.0.0.1:4317-4318->4317-4318/tcp, 55679/tcp
+openscope-v01-grafana      grafana/grafana:13.2.0@sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b                                                                            "/run.sh"                grafana      10 seconds ago   Up 9 seconds   127.0.0.1:13001->3000/tcp
+openscope-v01-loki         grafana/loki:3.7.6@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952                                                                                "/usr/bin/loki -conf…"   loki         10 seconds ago   Up 9 seconds   3100/tcp
+openscope-v01-prometheus   prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0                                                                           "/bin/prometheus --c…"   prometheus   10 seconds ago   Up 9 seconds   9090/tcp
+openscope-v01-tempo        grafana/tempo:3.0.3@sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5                                                                               "/tempo -config.file…"   tempo        10 seconds ago   Up 9 seconds   
+---
+NAMES                      STATUS
+openscope-v01-loki         Up 9 seconds
+openscope-v01-tempo        Up 9 seconds
+openscope-v01-prometheus   Up 9 seconds
+openscope-v01-grafana      Up 9 seconds
+openscope-v01-collector    Up 9 seconds
+-- cli doctor --
+[doctor] component health:
+  OK   collector
+  OK   prometheus
+  OK   tempo
+  OK   loki
+  OK   grafana
+  OK   grafana api
+  OK   datasource openscope-prometheus
+  OK   datasource openscope-tempo
+  OK   datasource openscope-loki
+  OK   dashboard openscope-overview provisioned
+[doctor] ALL OK
+-- verify-v0.1 --
+
+=== preflight ===
+  ok stack running
+
+=== sample app (Java Agent present) ===
+  ok app up (pid 585762)
+  PASS sample started under Java Agent yes
+
+=== traffic generation ===
+ok:200 fail:500 sensitive:200 
+
+=== Tempo (traces) ===
+  PASS traces found in Tempo (n=10)
+  PASS fetched traceID=c4f4e2e9a284df3d4a1190b7d7ac9cb4
+  PASS trace resource attr site.id
+  PASS trace resource attr project.id
+  PASS trace resource attr deployment.environment.name
+  PASS trace resource attr service.namespace
+  PASS trace resource attr service.name
+  PASS trace resource attr service.instance.id
+  PASS trace resource attr service.version
+  PASS failure span evidence present (500/ERROR across traces)
+
+=== Prometheus (metrics) ===
+  PASS target_info present for openscope-sample
+  PASS prom label site_id
+  PASS prom label project_id
+  PASS prom label deployment_environment_name
+  PASS prom label service_version
+  PASS prom label job
+  PASS prom label instance
+  PASS job carries service identity openscope-sample
+  PASS http_server_request_duration_seconds_count series found
+
+=== Loki (logs) ===
+  PASS log lines found in Loki (n=38)
+  PASS log trace_id matches Tempo traceID (AC-D7/AC-08, trace=c4f4e2e9a284df3d4a1190b7d7ac9cb4 streams=1)
+
+=== redaction (AC-E1..E3) ===
+  canary: V0-1-CANARY-1787898776-581013
+  PASS Loki: canary absent

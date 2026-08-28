@@ -1,0 +1,47 @@
+
+=== preflight ===
+  ok stack running
+
+=== sample app (Java Agent present) ===
+  ok app up (pid 771052)
+  PASS sample started under Java Agent yes
+
+=== traffic generation ===
+ok:200 fail:500 sensitive:200 
+
+=== Tempo (traces) ===
+  PASS traces found in Tempo (n=4)
+  PASS fetched traceID=61bdb7f867962017df8439d8688cc769
+  PASS trace resource attr site.id
+  PASS trace resource attr project.id
+  PASS trace resource attr deployment.environment.name
+  PASS trace resource attr service.namespace
+  PASS trace resource attr service.name
+  PASS trace resource attr service.instance.id
+  PASS trace resource attr service.version
+  PASS failure span evidence present (500/ERROR across traces)
+
+=== Prometheus (metrics) ===
+  PASS target_info present for openscope-sample
+  PASS prom label site_id
+  PASS prom label project_id
+  PASS prom label deployment_environment_name
+  PASS prom label service_version
+  PASS prom label job
+  PASS prom label instance
+  PASS job carries service identity openscope-sample
+  PASS http_server_request_duration_seconds_count series found
+
+=== Loki (logs) ===
+  PASS log lines found in Loki (n=103)
+  PASS log trace_id matches Tempo traceID (AC-D7/AC-08, trace=61bdb7f867962017df8439d8688cc769 streams=2)
+
+=== redaction (AC-E1..E3) ===
+  canary: V0-1-CANARY-1787903839-770958
+  PASS Loki: canary absent
+  PASS Prometheus: canary absent
+  PASS Tempo: canary absent
+
+=== summary ===
+  checks=25 passed=25 failed=0
+VERIFY-V0.1 PASSED

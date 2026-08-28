@@ -11,4 +11,3 @@ target/
 .env
 dependencies/
 distribution/standalone/.data/
-docs/testing/2026/
