@@ -15,7 +15,7 @@ volumes:
 
 services:
   collector:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${OPEN_SCOPE_BOM_OTELCOL}@sha256:${OPEN_SCOPE_BOM_OTELCOL_DIGEST}
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${OPEN_SCOPE_BOM_OTELCOL}@${OPEN_SCOPE_BOM_OTELCOL_DIGEST}
     container_name: openscope-v01-collector
     restart: unless-stopped
     command: ["--config", "/etc/openscope/collector.yaml"]
@@ -28,7 +28,7 @@ services:
       - openscope-net
 
   prometheus:
-    image: prom/prometheus:${OPEN_SCOPE_BOM_PROMETHEUS}@sha256:${OPEN_SCOPE_BOM_PROMETHEUS_DIGEST}
+    image: prom/prometheus:${OPEN_SCOPE_BOM_PROMETHEUS}@${OPEN_SCOPE_BOM_PROMETHEUS_DIGEST}
     container_name: openscope-v01-prometheus
     restart: unless-stopped
     command:
@@ -42,7 +42,7 @@ services:
       - openscope-net
 
   tempo:
-    image: grafana/tempo:${OPEN_SCOPE_BOM_TEMPO}@sha256:${OPEN_SCOPE_BOM_TEMPO_DIGEST}
+    image: grafana/tempo:${OPEN_SCOPE_BOM_TEMPO}@${OPEN_SCOPE_BOM_TEMPO_DIGEST}
     container_name: openscope-v01-tempo
     restart: unless-stopped
     command: ["-config.file=/etc/openscope/tempo.yaml"]
@@ -53,7 +53,7 @@ services:
       - openscope-net
 
   loki:
-    image: grafana/loki:${OPEN_SCOPE_BOM_LOKI}@sha256:${OPEN_SCOPE_BOM_LOKI_DIGEST}
+    image: grafana/loki:${OPEN_SCOPE_BOM_LOKI}@${OPEN_SCOPE_BOM_LOKI_DIGEST}
     container_name: openscope-v01-loki
     restart: unless-stopped
     command: ["-config.file=/etc/openscope/loki.yaml"]
@@ -64,7 +64,7 @@ services:
       - openscope-net
 
   grafana:
-    image: grafana/grafana:${OPEN_SCOPE_BOM_GRAFANA}@sha256:${OPEN_SCOPE_BOM_GRAFANA_DIGEST}
+    image: grafana/grafana:${OPEN_SCOPE_BOM_GRAFANA}@${OPEN_SCOPE_BOM_GRAFANA_DIGEST}
     container_name: openscope-v01-grafana
     restart: unless-stopped
     environment:
