@@ -1,32 +1,30 @@
 # Module Boundaries
 
-> 规划期边界（pre-code）。权威仓库结构：《OpenScope-技术架构》§22。
+> 当前基线：V0.1 standalone 已实施（2026-08-28 验收）。权威仓库结构：《OpenScope-技术架构》§22。
 
-## Module Families（规划）
+## Module Families（已落地/规划）
 
 ### 1. java/ — Java 接入层
-- V0.1 只含 `examples/springboot-simple/` 和固定 Java Agent manifest，不创建以下自研模块
-- `openscope-api`：Context、Project/Site Metadata、Business Span Helper
-- `openscope-spring-boot-autoconfigure`：Auto Configuration、Property Binding、Resource Mapping
-- `openscope-spring-boot-starter`：聚合用户依赖（基于官方 otel starter 封装）
-- `openscope-logback`：JSON Encoder、trace_id/span_id 注入
+- **已落地**：`examples/springboot-simple/`（Java 21 + OTel Java Agent 2.31.1，ProbeController 三端点）+ `agents/java/manifest.yaml`（Agent 版本/SHA 归档）
+- 规划中（V0.2+，依赖真实 Agent 缺口）：`openscope-api`（Context、Project/Site Metadata、Business Span Helper）、`openscope-spring-boot-autoconfigure`、`openscope-spring-boot-starter`、`openscope-logback`（JSON Encoder、trace_id/span_id 注入）
 - 允许依赖：OpenTelemetry API/Spring Boot Starter；禁止依赖：任何 Backend 客户端库
 
 ### 2. collector/ — 数据平面配置资产
-- `base/` 标准管线（receiver/processors/exporters）、`sampling/`、`redaction/`
-- 只产出 YAML 配置模板与 BOM 引用，不含服务代码
+- **已落地**：`distribution/standalone/config/collector/collector.yaml`（otlp receiver + memory_limiter/resource/attributes-redact/batch/otlphttp exporters，traces/metrics/logs 三管线，无 filelog 通路）
+- `sampling/`、`redaction/` 独立模板延后（Tail Sampling 为 V1.x）
 
 ### 3. distribution/ — 发行版装配
-- V0.1 只建立 `standalone/` docker-compose + `.env.example`；`central/ | distributed/` 在各自需求批准后创建
+- **已落地**：`standalone/`（docker-compose.yml + config/* + .env.example）+ `bom.yaml`（五组件 tag@digest，BOM 唯一版本源）
+- `central/ | distributed/` 在各自需求批准后创建
 - 版本以 BOM 为准；禁止锁定 BOM 之外的版本号
 
 ### 4. grafana/ — 可视化资产
-- `dashboards/ datasources/ alerts/` 全部 Provisioning 化，Git 管理
-- Dashboard 变量固定六元组：site/environment/project/namespace/service/instance
+- **已落地**：`grafana/provisioning/datasources/{prometheus,tempo,loki}.yml`（UID 固定 `openscope-*`，含 trace_id/span_id 关联 derivedFields）+ `grafana/dashboards/overview/openscope-overview.json`（六元组变量）
+- 全部 Provisioning 化，Git 管理；Dashboard 变量固定六元组：site/environment/project/namespace/service/instance
 
 ### 5. cli/ — 运维入口
-- V0.1 为 shell 脚本包装 docker compose（start/stop/status/doctor/version）；init/backup/restore/upgrade 后续另立需求
-- Go CLI 收敛待命令面稳定后；doctor 必须检测 agent+starter 叠加冲突
+- **已落地**：`cli/openscope`（start/stop/status/doctor/version，shell 包装 docker compose；BOM digest 注入、C5 密码 gate、磁盘/端口/卷 fail-closed）
+- init/backup/restore/upgrade 后续另立需求；Go CLI 收敛待命令面稳定后；doctor 已内置 grafana datasource/dashboard/agent 检查（agent+starter 叠加检测 V0.2）
 
 ## Dependency Direction（必须保持）
 

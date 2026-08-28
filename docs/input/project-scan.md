@@ -1,6 +1,6 @@
 # OpenScope 项目扫描（WI1）
 
-> 扫描日期：2026-08-27。项目当前处于 **pre-code 设计阶段**（无源码），仓库由两份架构文档驱动。
+> 扫描日期：2026-08-27（快照文件，反映当时 pre-code 状态）。**已过时**：V0.1 standalone 于 2026-08-28 实施并验收 accepted，最新状态见 `docs/context/project-context.md` 与 `docs/architecture/system-baseline.md`。
 
 ## 仓库现状
 

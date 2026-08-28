@@ -21,7 +21,7 @@ This file is the AI entry point. The following `docs/context/` companions are re
 ## Project Identity
 
 - Project name: OpenScope
-- Product type: 可观测性发行版/框架（OTel-native observability distribution），当前为 pre-code 设计阶段仓库
+- Product type: 可观测性发行版/框架（OTel-native observability distribution）；**V0.1 standalone 已实施并验收**（2026-08-28）
 - Primary users: cywu 个人自研项目（Family-OS/Health-OS/Teacher-OS/Everglow/XiangLiZhi）、公司内部（Data-OS 等）、政务/医疗交付项目
 - Documentation freshness: `fresh`（两份根目录架构文档 2026-08-27 完成评审与修订，AGE 上下文同日建立）
 
@@ -34,29 +34,25 @@ This file is the AI entry point. The following `docs/context/` companions are re
 ## Current Technical Baseline
 
 - Frontend stack: none（V1 无自研前端，可视化统一走 Grafana Provisioning）
-- Backend stack: 规划中——V0.1 使用 Java 21 / Spring Boot + OTel Java Agent；后续再评估自研 Java 模块；数据平面 opentelemetry-collector-contrib；后端 Prometheus ≥3.0 + Grafana Tempo + Loki ≥3.0 + Grafana
-- Database/model source: none（不自研存储；组件版本权威 = Distribution BOM，见《OpenScope-技术架构》§20；仓库结构权威 = 《OpenScope-技术架构》§22）
+- Backend stack: **V0.1 已实施**（2026-08-28 验收通过）——Java 21 / Spring Boot 示例（examples/springboot-simple）+ OTel Java Agent 2.31.1（零侵入接入）；数据平面 opentelemetry-collector-contrib 0.159.0；后端 Prometheus v3.14.0（原生 OTLP Receiver）+ Grafana Tempo 3.0.3 + Loki 3.7.6（原生 OTLP 端点）+ Grafana 13.2.0；部署 standalone docker-compose
+- Database/model source: none（不自研存储；组件版本权威 = Distribution BOM `distribution/bom.yaml`，见《OpenScope-技术架构》§20；仓库结构权威 = 《OpenScope-技术架构》§22）
+- 自研件：`examples/springboot-simple`（ProbeController ok/fail/sensitive 三端点）、`cli/openscope`（start/stop/status/doctor/version）、`tools/{resolve-bom,verify-docs,verify-v0.1,verify-v0.1-remote}.sh`、`distribution/standalone`（compose+config+env 模板）、`grafana/provisioning`（三 datasource + dashboard）
 
 ## Verification Commands
 
-当前 pre-code 阶段只有文档与 AGE 脚手架命令真实存在。V0.1 plan 通过 human draft review 后，Phase 0 是唯一允许的 bootstrap implementation；它必须先创建并验证 Maven Wrapper、BOM 解析和产品验证入口，之后才可进入产品装配。
+**真实命令（V0.1 验收用过，全部有效）**。`mission-driver.sh run demo` 只能验证 AGE 流程，不得作为 V0.1 产品通过证据。
 
-| Current Purpose | Command |
+| Purpose | Command |
 | --- | --- |
-| AGE scaffold smoke（非产品 E2E） | `./tools/mission-driver.sh list` |
+| Java build/test | `./mvnw -q -pl examples/springboot-simple -am verify`（exit 0, Java 21） |
+| BOM integrity | `./tools/resolve-bom.sh --check` |
 | Documentation check | `./tools/verify-docs.sh` |
-
-Plan 激活后按阶段建立的命令：
-
-| Planned Purpose | Owning Phase And Command |
-| --- | --- |
-| Java build/test（Phase 0 创建） | `./mvnw -q verify` |
-| BOM integrity（Phase 0 创建） | `./tools/resolve-bom.sh --check` |
-| Compose static check（Phase 1 起可执行） | `docker compose --env-file distribution/standalone/.env.example -f distribution/standalone/docker-compose.yml config --quiet` |
-| V0.1 product integration（Phase 0 创建入口，Phase 2 起逐步实现） | `./tools/verify-v0.1.sh` |
-| Runtime doctor（Phase 4 创建） | `./cli/openscope doctor` |
-
-`mission-driver.sh run demo` 只能验证 AGE 流程，不得作为 V0.1 产品通过证据。
+| Compose static check | `docker compose --env-file distribution/standalone/.env -f distribution/standalone/docker-compose.yml config --quiet` |
+| V0.1 product integration（25 项信号/安全/相关性检查） | `AGENT_JAR=dependencies/opentelemetry-javaagent.jar ./tools/verify-v0.1.sh`（验收时 25/25 PASSED ×2） |
+| Remote acceptance runner | `./tools/verify-v0.1-remote.sh`（SSH 到 172.16.65.59 全流程） |
+| Runtime doctor | `./cli/openscope doctor` |
+| start/stop/status/version | `./cli/openscope start|stop|status|version` |
+| AGE scaffold smoke | `./tools/mission-driver.sh list` |
 
 ## Development Validation Environment
 

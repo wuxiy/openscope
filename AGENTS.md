@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> OpenScope —— OpenTelemetry-native observability distribution/framework（OTel Native + Collector Centric + One Official Backend + Multiple Topologies）。当前为 pre-code 设计阶段。本项目使用 Attractor-Guided Engineering（AGE）工作流进行 AI 辅助开发。
+> OpenScope —— OpenTelemetry-native observability distribution/framework（OTel Native + Collector Centric + One Official Backend + Multiple Topologies）。V0.1 standalone 已实施（2026-08-28 验收 accepted）。本项目使用 Attractor-Guided Engineering（AGE）工作流进行 AI 辅助开发。
 
 ## 每次任务必读（最小集）
 
@@ -14,8 +14,8 @@
 
 ## 环境事实
 
-- 包管理器/构建：pre-code 无；出码后为 **Maven**（Java），非 npm
-- 当前唯一有效验证命令：`./tools/mission-driver.sh list | run demo`；完整命令表见 project-context
+- 包管理器/构建：**Maven**（Java，非 npm）；构建命令 `./mvnw -q -pl examples/springboot-simple -am verify`
+- 验证命令：`./tools/verify-docs.sh`、`./tools/resolve-bom.sh --check`、`./cli/openscope doctor`、`./tools/verify-v0.1.sh`（25 项集成验收）；完整命令表见 project-context
 - 引擎：AGE mission-driver（missions/{base,demo,onboarding}.json）
 
 ## 行为硬规则

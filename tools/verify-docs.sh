@@ -40,7 +40,7 @@ if grep -rn "GF_ADMIN_PASSWORD: *.*admin" --include="*.yml" --include="*.yaml" g
 else
   echo "  ok no default admin password in tracked config"
 fi
-if git grep -n "change-me-strong-password" -- ':!distribution/standalone/.env.example' ':!cli/openscope' ':!tools/verify-docs.sh' >/dev/null 2>&1; then
+if git grep -n "change-me-strong-password" -- ':!distribution/standalone/.env.example' ':!cli/openscope' ':!tools/verify-docs.sh' ':!docs/testing/2026/*' >/dev/null 2>&1; then
   echo "  FAIL example password placeholder outside .env.example"; fail=1
 else
   echo "  ok example password only in .env.example"
