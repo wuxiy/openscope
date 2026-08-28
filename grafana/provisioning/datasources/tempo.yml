@@ -1,0 +1,24 @@
+# Tempo datasource — fixed UID; Trace -> Logs via tracesToLogsV2 to Loki.
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    uid: openscope-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      httpMethod: GET
+      tracesToLogsV2:
+        datasourceUid: openscope-loki
+        tags:
+          - service.name
+        mappedTags:
+          - key: service.name
+            value: service_name
+        mapTagNamesEnabled: true
+        spanStartTimeShift: 1h
+        spanEndTimeShift: -1h
+        filterByTraceID: true
+        filterBySpanID: true

@@ -1,0 +1,10 @@
+# OpenScope V0.1 Java Agent manifest — single authoritative pin for the agent used by samples/acceptance.
+agent:
+  name: opentelemetry-javaagent
+  version: 2.31.1
+  sha256: bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba
+  artifact_url: https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.31.1/opentelemetry-javaagent-2.31.1.jar
+  instrumentation_notes:
+    - logback-appender-1.0 remains ENABLED — V0.1 log path is Agent -> OTLP LogRecord -> Collector -> Loki
+    - Metrics temporality forced to cumulative via OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+    - OTLP/HTTP (http/protobuf) is the app->collector protocol

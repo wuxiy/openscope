@@ -1,0 +1,11 @@
+# OpenScope V0.1 Prometheus — receives metrics exclusively via the native OTLP receiver.
+# The OTLP receiver translates resource attributes into target_info labels
+# (dot -> underscore normalization), e.g. service.name -> service_name,
+# deployment.environment.name -> deployment_environment_name.
+# No scrape_configs are needed for V0.1: all metric paths are OTLP.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Native OTLP ingestion is enabled on the command line via --web.enable-otlp-receiver.
+scrape_configs: []

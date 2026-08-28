@@ -1,0 +1,13 @@
+# Dashboard provider — dashboards are provisioned from git, never created in the UI.
+apiVersion: 1
+
+providers:
+  - name: openscope-overview
+    orgId: 1
+    folder: OpenScope
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

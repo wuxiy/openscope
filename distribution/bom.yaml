@@ -1,0 +1,58 @@
+# OpenScope V0.1 Distribution BOM — single source of truth for component versions.
+# Digest resolution: ./tools/resolve-bom.sh (idempotent). Verify: ./tools/resolve-bom.sh --check
+# Policy: exact tag@sha256 only; no latest / floating tags (AC-A1/A2).
+openscope:
+  version: 0.1.0
+  build: v0.1-standalone
+
+images:
+  otelcol-contrib:
+    repo: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+    tag: 0.159.0
+    digest: sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+    source: ghcr.io
+    resolved_at: "2026-08-28"
+    components:
+      otlp_receiver: stable
+      otlphttp_exporter: beta
+      otlp_grpc_exporter: stable
+      memorylimiter: beta
+      resource: beta
+      attributes: beta
+      batch: stable
+  prometheus:
+    repo: ghcr.io/prometheus/prometheus
+    tag: v3.14.0
+    digest: sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    source: ghcr.io
+    resolved_at: "2026-08-28"
+    notes: native OTLP receiver via --web.enable-otlp-receiver
+  tempo:
+    repo: grafana/tempo
+    tag: 3.0.3
+    digest: sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+    source: docker.io (resolved via remote daemon mirror path)
+    resolved_at: "2026-08-28"
+    notes: monolithic, local filesystem storage
+  loki:
+    repo: grafana/loki
+    tag: 3.7.6
+    digest: sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+    source: docker.io (resolved via remote daemon mirror path)
+    resolved_at: "2026-08-28"
+    notes: TSDB schema v13, native OTLP /otlp endpoint
+  grafana:
+    repo: grafana/grafana
+    tag: 13.2.0
+    digest: sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+    source: docker.io (resolved via remote daemon mirror path)
+    resolved_at: "2026-08-28"
+    notes: provisioning-only configuration
+
+agents:
+  java-agent:
+    name: opentelemetry-javaagent
+    version: 2.31.1
+    sha256: bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba
+    source: Maven Central
+    verified_at: "2026-08-28"

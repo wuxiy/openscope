@@ -2,3 +2,13 @@
 .env
 _tmp/
 tmp/
+
+# OpenScope build & runtime
+.target/
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.log
+.env
+dependencies/
+distribution/standalone/.data/
+docs/testing/2026/

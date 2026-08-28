@@ -1,0 +1,48 @@
+# OpenScope V0.1 Loki — TSDB schema v13, native OTLP ingestion at /otlp.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: "2026-08-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: openscope_
+        period: 24h
+
+limits_config:
+  allow_structured_metadata: true
+  # V0.1 OTLP contract: five low-cardinality resource attributes become index labels;
+  # everything else (including service.instance.id) stays structured metadata.
+  otlp_config:
+    resource_attributes:
+      attributes:
+        - action: index_label
+          name: site.id
+        - action: index_label
+          name: project.id
+        - action: index_label
+          name: deployment.environment.name
+        - action: index_label
+          name: service.namespace
+        - action: index_label
+          name: service.name
+
+storage_config:
+  filesystem:
+    directory: /loki/chunks

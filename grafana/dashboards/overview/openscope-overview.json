@@ -1,0 +1,63 @@
+{
+  "uid": "openscope-overview",
+  "title": "OpenScope Overview",
+  "description": "V0.1 overview dashboard. Filtering uses the six canonical variables: site/environment/project/namespace/service/instance (Prometheus normalized labels from target_info).",
+  "tags": ["openscope"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      { "name": "site", "label": "site", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info, site_id)", "refId": "var-site" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } },
+      { "name": "environment", "label": "environment", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info{site_id=~\"$site\"}, deployment_environment_name)", "refId": "var-environment" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } },
+      { "name": "project", "label": "project", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info{site_id=~\"$site\", deployment_environment_name=~\"$environment\"}, project_id)", "refId": "var-project" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } },
+      { "name": "namespace", "label": "namespace", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info{project_id=~\"$project\"}, service_namespace)", "refId": "var-namespace" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } },
+      { "name": "service", "label": "service", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info{service_namespace=~\"$namespace\"}, service_name)", "refId": "var-service" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } },
+      { "name": "instance", "label": "instance", "type": "query", "datasource": { "uid": "openscope-prometheus", "type": "prometheus" }, "query": { "query": "label_values(target_info{service_name=~\"$service\"}, service_instance_id)", "refId": "var-instance" }, "includeAll": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "HTTP Request Rate (RED)",
+      "datasource": { "uid": "openscope-prometheus", "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_request_duration_seconds_count{site_id=~\"$site\", deployment_environment_name=~\"$environment\", project_id=~\"$project\", service_namespace=~\"$namespace\", service_name=~\"$service\", service_instance_id=~\"$instance\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP Error Rate (RED)",
+      "datasource": { "uid": "openscope-prometheus", "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_request_duration_seconds_count{site_id=~\"$site\", deployment_environment_name=~\"$environment\", project_id=~\"$project\", service_namespace=~\"$namespace\", service_name=~\"$service\", service_instance_id=~\"$instance\", http_response_status_code=~\"5..\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "HTTP Duration P95 (RED)",
+      "datasource": { "uid": "openscope-prometheus", "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{site_id=~\"$site\", deployment_environment_name=~\"$environment\", project_id=~\"$project\", service_namespace=~\"$namespace\", service_name=~\"$service\", service_instance_id=~\"$instance\"}[5m])) by (le))" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Services (target_info)",
+      "datasource": { "uid": "openscope-prometheus", "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "refId": "A", "expr": "target_info{site_id=~\"$site\", deployment_environment_name=~\"$environment\", project_id=~\"$project\", service_namespace=~\"$namespace\", service_name=~\"$service\", service_instance_id=~\"$instance\"}", "format": "table" }
+      ]
+    }
+  ]
+}

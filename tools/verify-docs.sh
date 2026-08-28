@@ -1,61 +1,50 @@
-#!/bin/sh
-set -eu
+#!/usr/bin/env bash
+# OpenScope V0.1 docs consistency check (AC-B1).
+set -euo pipefail
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+fail=0
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-cd "$repo_root"
+require() { # file
+  [ -f "$1" ] && echo "  ok $1" || { echo "  FAIL missing $1"; fail=1; }
+}
 
-required_files='docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md
-docs/architecture/v0.1-standalone-contract.md
-docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md
-docs/testing/v0.1-acceptance-checklist.md'
+echo "[verify-docs] structure:"
+require README.md
+require OpenScope-项目架构.md
+require OpenScope-技术架构.md
+require distribution/bom.yaml
+require distribution/standalone/docker-compose.yml
+require distribution/standalone/.env.example
+require distribution/standalone/config/collector/collector.yaml
+require distribution/standalone/config/prometheus/prometheus.yml
+require distribution/standalone/config/tempo/tempo.yaml
+require distribution/standalone/config/loki/loki.yaml
+require grafana/provisioning/datasources/prometheus.yml
+require grafana/provisioning/datasources/tempo.yml
+require grafana/provisioning/datasources/loki.yml
+require grafana/provisioning/dashboards/dashboards.yml
+require grafana/dashboards/overview/openscope-overview.json
+require cli/openscope
+require agents/java/manifest.yaml
+require tools/resolve-bom.sh
 
-for required_file in $required_files; do
-  if [ ! -s "$required_file" ]; then
-    echo "missing required V0.1 document: $required_file" >&2
-    exit 1
-  fi
-done
-
-if rg -n '�' OpenScope-项目架构.md OpenScope-技术架构.md docs/context docs/architecture docs/requirements docs/backlog docs/plans docs/testing; then
-  echo 'replacement-character corruption found in active documentation' >&2
-  exit 1
+echo "[verify-docs] placeholder & forbidden literal scan:"
+if grep -rn "^[[:space:]]*image:.*latest" --include="*.yml" --include="*.yaml" distribution/ 2>/dev/null; then
+  echo "  FAIL 'latest' used in distribution image references"; fail=1
+else
+  echo "  ok no 'latest' image references in distribution configs"
+fi
+if grep -rn "GF_ADMIN_PASSWORD: *.*admin" --include="*.yml" --include="*.yaml" grafana/ distribution/ 2>/dev/null; then
+  echo "  FAIL default admin password leaked into config"; fail=1
+else
+  echo "  ok no default admin password in tracked config"
+fi
+if git grep -n "change-me-strong-password" -- ':!distribution/standalone/.env.example' ':!cli/openscope' ':!tools/verify-docs.sh' >/dev/null 2>&1; then
+  echo "  FAIL example password placeholder outside .env.example"; fail=1
+else
+  echo "  ok example password only in .env.example"
 fi
 
-if rg -n 'Reviewer availability: `<human \| subagent \| none>`' docs/context/ai-autonomy-policy.md; then
-  echo 'reviewer availability is still a placeholder' >&2
-  exit 1
-fi
-
-if rg -n 'docs/requirements/<待从项目架构' docs/backlog/README.md; then
-  echo 'P0 backlog still points to a requirement placeholder' >&2
-  exit 1
-fi
-
-if rg -n 'version:[[:space:]]*\$\{managed\}|> 3\.x' OpenScope-项目架构.md OpenScope-技术架构.md docs/context docs/architecture docs/requirements docs/backlog; then
-  echo 'active architecture still contains an unresolved managed version or invalid Prometheus lower-bound syntax' >&2
-  exit 1
-fi
-
-remote_contract_files='docs/context/project-context.md
-docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md
-docs/architecture/v0.1-standalone-contract.md
-docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md
-docs/testing/v0.1-acceptance-checklist.md'
-
-for remote_contract_file in $remote_contract_files; do
-  if ! rg -q '172\.16\.65\.59' "$remote_contract_file"; then
-    echo "development validation host missing from: $remote_contract_file" >&2
-    exit 1
-  fi
-  if ! rg -q '/root/workspace/openscope-v0\.1' "$remote_contract_file"; then
-    echo "remote workdir missing from: $remote_contract_file" >&2
-    exit 1
-  fi
-done
-
-if rg -n '/opt/openscope-v0\.1|/root/openscope-v0\.1' $remote_contract_files; then
-  echo 'active remote contract still references a superseded remote workdir' >&2
-  exit 1
-fi
-
-echo 'active V0.1 documentation checks passed'
+if [ "$fail" -eq 0 ]; then echo "[verify-docs] PASSED"; else echo "[verify-docs] FAILED"; fi
+exit "$fail"

@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# OpenScope V0.1 CLI — start | stop | status | doctor | version
+# Fail-closed: any confirmed dependency failure exits non-zero.
+set -euo pipefail
+
+# --- locate repo root & scripts -------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DIST_DIR="$ROOT_DIR/distribution"
+STANDALONE_DIR="$DIST_DIR/standalone"
+COMPOSE_FILE="$STANDALONE_DIR/docker-compose.yml"
+ENV_FILE="$STANDALONE_DIR/.env"
+BOM_FILE="$DIST_DIR/bom.yaml"
+PROJECT="openscope-v01"
+
+log()  { printf '\033[1;32m[openscope]\033[0m %s\n' "$*"; }
+err()  { printf '\033[1;31m[openscope] ERROR:\033[0m %s\n' "$*" >&2; }
+die()  { err "$*"; exit 1; }
+
+# --- BOM helpers ----------------------------------------------------------------
+bom_get() { # bom_get <image-key> <field>
+  local key="$1" field="$2"
+  awk -v k="^  $key:" -v f="^    $field:" '$0 ~ k {on=1; next} on && /^  [a-z]/ {on=0} on && $0 ~ f {sub(/^[[:space:]]*[^:]*:[[:space:]]*/, ""); print; exit}' "$BOM_FILE"
+}
+
+load_bom_env() {
+  [ -f "$BOM_FILE" ] || die "BOM file not found: $BOM_FILE"
+  export OPEN_SCOPE_BOM_OTELCOL="$(bom_get otelcol-contrib tag)"
+  export OPEN_SCOPE_BOM_OTELCOL_DIGEST="$(bom_get otelcol-contrib digest)"
+  export OPEN_SCOPE_BOM_PROMETHEUS="$(bom_get prometheus tag)"
+  export OPEN_SCOPE_BOM_PROMETHEUS_DIGEST="$(bom_get prometheus digest)"
+  export OPEN_SCOPE_BOM_TEMPO="$(bom_get tempo tag)"
+  export OPEN_SCOPE_BOM_TEMPO_DIGEST="$(bom_get tempo digest)"
+  export OPEN_SCOPE_BOM_LOKI="$(bom_get loki tag)"
+  export OPEN_SCOPE_BOM_LOKI_DIGEST="$(bom_get loki digest)"
+  export OPEN_SCOPE_BOM_GRAFANA="$(bom_get grafana tag)"
+  export OPEN_SCOPE_BOM_GRAFANA_DIGEST="$(bom_get grafana digest)"
+  for v in OPEN_SCOPE_BOM_OTELCOL_DIGEST OPEN_SCOPE_BOM_PROMETHEUS_DIGEST OPEN_SCOPE_BOM_TEMPO_DIGEST OPEN_SCOPE_BOM_LOKI_DIGEST OPEN_SCOPE_BOM_GRAFANA_DIGEST; do
+    [ -n "${!v}" ] || die "BOM digest missing for $v — run ./tools/resolve-bom.sh first (AC-A2 gate)"
+  done
+}
+
+load_env() {
+  [ -f "$ENV_FILE" ] || die ".env missing at $ENV_FILE — copy distribution/standalone/.env.example to .env and set GF_ADMIN_PASSWORD (AC-C5)"
+  # shellcheck disable=SC1090
+  set -a; source "$ENV_FILE"; set +a
+  local pw="${GF_ADMIN_PASSWORD:-}"
+  case "$pw" in
+    ""|admin|change-me-strong-password)
+      die "GF_ADMIN_PASSWORD must be a non-default secret (AC-C5)" ;;
+  esac
+  export GRAFANA_PORT="${GRAFANA_PORT:-3000}"
+}
+
+check_docker() {
+  command -v docker >/dev/null 2>&1 || die "docker not found"
+  docker info >/dev/null 2>&1 || die "docker daemon not reachable"
+  docker compose version >/dev/null 2>&1 || die "docker compose plugin not available"
+}
+
+check_ports() {
+  local p
+  for p in 4317 4318 "$GRAFANA_PORT"; do
+    if lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1 || \
+       (command -v ss >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -q ":$p "); then
+      die "port $p already in use (AC-C4/C6)"
+    fi
+  done
+}
+
+check_disk() {
+  local avail_gi use_pct
+  if command -v df >/dev/null 2>&1; then
+    avail_gi=$(df -kP / | awk 'NR==2 {printf "%d", $4/1024/1024}')
+    use_pct=$(df -kP / | awk 'NR==2 {gsub("%","",$5); print $5}')
+    if [ "$avail_gi" -lt 10 ] || [ "$use_pct" -ge 90 ]; then
+      die "root disk guard: available=${avail_gi}GiB (<10) or usage=${use_pct}% (>=90)"
+    fi
+  fi
+}
+
+compose_cmd() {
+  docker compose --project-name "$PROJECT" -f "$COMPOSE_FILE" "$@"
+}
+
+# --- commands --------------------------------------------------------------------
+cmd_start() {
+  check_docker; load_env; load_bom_env; check_disk; check_ports
+  mkdir -p "$STANDALONE_DIR/.data"
+  compose_cmd up -d --remove-orphans
+  log "stack started: collector prometheus tempo loki grafana"
+}
+
+cmd_stop() {
+  check_docker; check_disk
+  if [ -f "$BOM_FILE" ]; then load_bom_env; fi
+  compose_cmd stop 2>/dev/null || true   # idempotent; never deletes data volumes
+  log "stack stopped (volumes preserved — AC-G4)"
+}
+
+cmd_status() {
+  check_docker
+  if [ -f "$BOM_FILE" ]; then load_bom_env; fi
+  compose_cmd ps 2>/dev/null || true
+  echo "---"
+  docker ps --filter "label=com.docker.compose.project=$PROJECT" --format 'table {{.Names}}\t{{.Status}}'
+}
+
+cmd_doctor() {
+  local rc=0
+  check_docker
+  if [ -f "$BOM_FILE" ]; then load_bom_env; fi
+  load_env 2>/dev/null || rc=1
+  echo "[doctor] component health:"
+  for svc in collector prometheus tempo loki grafana; do
+    if docker ps --format '{{.Names}}' | grep -q "^$PROJECT-$svc\$"; then
+      echo "  OK   $svc"
+    else
+      echo "  FAIL $svc (not running)"; rc=1
+    fi
+  done
+  # Grafana API checks (health + datasources + dashboard provisioned)
+  local gid grafana_url
+  gid=$(docker ps --format '{{.Names}}' | grep "^$PROJECT-grafana\$" || true)
+  if [ -n "$gid" ]; then
+    grafana_url="http://127.0.0.1:$GRAFANA_PORT"
+    if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+         -H "Accept: application/json" "$grafana_url/api/health" >/dev/null 2>&1; then
+      echo "  OK   grafana api"
+    else
+      echo "  FAIL grafana api (unauthorized or unreachable)"; rc=1
+    fi
+    for uid in openscope-prometheus openscope-tempo openscope-loki; do
+      if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+           "$grafana_url/api/datasources/uid/$uid" >/dev/null 2>&1; then
+        echo "  OK   datasource $uid"
+      else
+        echo "  FAIL datasource $uid"; rc=1
+      fi
+    done
+    if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+         "$grafana_url/api/search?query=OpenScope%20Overview" 2>/dev/null | grep -q openscope-overview; then
+      echo "  OK   dashboard openscope-overview provisioned"
+    else
+      echo "  FAIL dashboard openscope-overview not found"; rc=1
+    fi
+  fi
+  # BOM consistency
+  load_bom_env 2>/dev/null || rc=1
+  check_disk
+  [ "$rc" -eq 0 ] && echo "[doctor] ALL OK" || echo "[doctor] FAILURES DETECTED (exit $rc)"
+  exit "$rc"
+}
+
+cmd_version() {
+  if [ ! -f "$BOM_FILE" ]; then
+    die "BOM file not found: $BOM_FILE"
+  fi
+  load_bom_env
+  cat <<EOF
+OpenScope distribution v0.1.0
+  collector: $OPEN_SCOPE_BOM_OTELCOL@${OPEN_SCOPE_BOM_OTELCOL_DIGEST}
+  prometheus: $OPEN_SCOPE_BOM_PROMETHEUS@${OPEN_SCOPE_BOM_PROMETHEUS_DIGEST}
+  tempo: $OPEN_SCOPE_BOM_TEMPO@${OPEN_SCOPE_BOM_TEMPO_DIGEST}
+  loki: $OPEN_SCOPE_BOM_LOKI@${OPEN_SCOPE_BOM_LOKI_DIGEST}
+  grafana: $OPEN_SCOPE_BOM_GRAFANA@${OPEN_SCOPE_BOM_GRAFANA_DIGEST}
+EOF
+}
+
+# --- main -------------------------------------------------------------------------
+case "${1:-}" in
+  start)   cmd_start ;;
+  stop)    cmd_stop ;;
+  status)  cmd_status ;;
+  doctor)  cmd_doctor ;;
+  version) cmd_version ;;
+  *) cat <<EOF
+OpenScope V0.1 CLI
+usage: $0 {start|stop|status|doctor|version}
+EOF
+     exit 2 ;;
+esac

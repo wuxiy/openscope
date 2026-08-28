@@ -1,0 +1,81 @@
+# OpenScope V0.1 standalone distribution — compose assembles the five managed components.
+# The only versions referenced are exact tag@sha256:digest pins from distribution/bom.yaml.
+# BOM is the single source of truth; never edit image references here without updating bom.yaml.
+name: openscope-v01
+
+networks:
+  openscope-net:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  tempo-data:
+  loki-data:
+  grafana-data:
+
+services:
+  collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${OPEN_SCOPE_BOM_OTELCOL}@sha256:${OPEN_SCOPE_BOM_OTELCOL_DIGEST}
+    container_name: openscope-v01-collector
+    restart: unless-stopped
+    command: ["--config", "/etc/openscope/collector.yaml"]
+    volumes:
+      - ./config/collector/collector.yaml:/etc/openscope/collector.yaml:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks:
+      - openscope-net
+
+  prometheus:
+    image: prom/prometheus:${OPEN_SCOPE_BOM_PROMETHEUS}@sha256:${OPEN_SCOPE_BOM_PROMETHEUS_DIGEST}
+    container_name: openscope-v01-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/openscope/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-otlp-receiver
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/openscope/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - openscope-net
+
+  tempo:
+    image: grafana/tempo:${OPEN_SCOPE_BOM_TEMPO}@sha256:${OPEN_SCOPE_BOM_TEMPO_DIGEST}
+    container_name: openscope-v01-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/openscope/tempo.yaml"]
+    volumes:
+      - ./config/tempo/tempo.yaml:/etc/openscope/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - openscope-net
+
+  loki:
+    image: grafana/loki:${OPEN_SCOPE_BOM_LOKI}@sha256:${OPEN_SCOPE_BOM_LOKI_DIGEST}
+    container_name: openscope-v01-loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/openscope/loki.yaml"]
+    volumes:
+      - ./config/loki/loki.yaml:/etc/openscope/loki.yaml:ro
+      - loki-data:/loki
+    networks:
+      - openscope-net
+
+  grafana:
+    image: grafana/grafana:${OPEN_SCOPE_BOM_GRAFANA}@sha256:${OPEN_SCOPE_BOM_GRAFANA_DIGEST}
+    container_name: openscope-v01-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../../grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:?set GRAFANA_PORT in .env}:3000"
+    networks:
+      - openscope-net

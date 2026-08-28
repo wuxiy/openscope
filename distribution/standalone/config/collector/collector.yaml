@@ -1,0 +1,92 @@
+# OpenScope V0.1 standalone Collector pipeline.
+# Order: receive -> memory_limiter -> resource validation/enrichment
+#        -> sensitive-key deletion -> batch -> export
+# Component stability record (used by BOM metadata / AC-A5):
+#   otlp receiver        : stable
+#   memorylimiter        : beta (stability review in BOM metadata)
+#   resource             : beta
+#   attributes           : beta (used for explicit key deletion, NOT alpha redaction processor)
+#   batch                : stable
+#   otlp exporter (grpc) : stable
+#   otlphttp exporter    : beta
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+  resource:
+    attributes:
+      - key: openscope.distribution
+        value: "v0.1"
+        action: upsert
+  attributes/traces-redact:
+    actions:
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+      - key: http.request.header.token
+        action: delete
+      - key: http.client.header.authorization
+        action: delete
+      - key: http.client.header.cookie
+        action: delete
+      - key: rpc.grpc.request.metadata.authorization
+        action: delete
+      - key: rpc.grpc.request.metadata.cookie
+        action: delete
+  attributes/metrics-redact:
+    actions:
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+  attributes/logs-redact:
+    actions:
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+      - key: http.request.header.token
+        action: delete
+      - key: body
+        action: delete
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  otlphttp/prometheus:
+    endpoint: http://prometheus:9090/api/v1/otlp
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, attributes/traces-redact, batch]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, attributes/metrics-redact, batch]
+      exporters: [otlphttp/prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, attributes/logs-redact, batch]
+      exporters: [otlphttp/loki]
