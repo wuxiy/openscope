@@ -121,7 +121,7 @@ if [ "${T_TOTAL:-0}" -ge 1 ]; then
   # Iterate over ALL recent traces: the first search hit is often a 200 trace,
   # while AC-D3 requires the 500/failure trace to carry error evidence.
   T_JSON="$(tq_search service.name%3Dopenscope-sample 20)"
-  TID="$(printf '%s' "$T_JSON" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["traces"][0]["traceID"])' 2>/dev/null || true)"
+  TID="$(printf '%s' "$T_JSON" | python3 -c 'import sys,json;d=json.load(sys.stdin);ts=sorted(d.get("traces",[]),key=lambda t:int(t.get("startTimeUnixNano",0)));print(ts[-1]["traceID"] if ts else "")' 2>/dev/null || true)"
   if [ -n "${TID:-}" ]; then
     pass "fetched traceID=$TID"
     # resource attributes on the first batch (Tempo returns list of {key,value})
@@ -179,20 +179,20 @@ else
   fail "no traces in Tempo (AC-D2/D3)"
 fi
 
-# wait for OTLP metrics to land in Prometheus (fresh sample push + scrape lag)
-i=0
-until pq 'target_info{project_id="openscope-v01"}' | grep -q "openscope-sample"; do
-  i=$((i+1)); [ "$i" -ge 10 ] && break; sleep 3
-done
-
 section "Prometheus (metrics)"
-P_INFO="$(pq 'target_info{project_id="openscope-v01"}' | python3 -c '
+P_INFO_QUERY='target_info{project_id="openscope-v01"}'
+P_INFO="{}"
+i=0
+while [ "$P_INFO" = "{}" ] && [ "$i" -lt 10 ]; do
+  P_INFO="$(pq "$P_INFO_QUERY" | python3 -c '
 import sys,json
 d=json.load(sys.stdin)
 rows=d.get("data",{}).get("result",[])
 # OpenTelemetry->Prometheus keeps service identity in the job label
 found=[m.get("metric",{}) for m in rows if "openscope-sample" in m.get("metric",{}).get("job","")]
 print(json.dumps(found[0] if found else {}))' 2>/dev/null || echo '{}')"
+  if [ "$P_INFO" = "{}" ]; then i=$((i+1)); sleep 3; fi
+done
 if [ "$P_INFO" != "{}" ]; then
   pass "target_info present for openscope-sample"
   # OTLP->Prometheus normalization: service.name/namespace -> job label,
@@ -204,9 +204,14 @@ if [ "$P_INFO" != "{}" ]; then
 else
   fail "target_info missing for openscope-sample (AC-D4/D5)"
 fi
-P_RATE="$(pq 'count(http_server_request_duration_seconds_count{job=~".*openscope-sample.*"})' | python3 -c '
+P_RATE=0
+i=0
+while [ "${P_RATE:-0}" -lt 1 ] && [ "$i" -lt 10 ]; do
+  P_RATE="$(pq 'count(http_server_request_duration_seconds_count{job=~".*openscope-sample.*"})' | python3 -c '
 import sys,json
 d=json.load(sys.stdin); r=d.get("data",{}).get("result",[]); print(len(r))' 2>/dev/null || echo 0)"
+  if [ "${P_RATE:-0}" -lt 1 ]; then i=$((i+1)); sleep 3; fi
+done
 [ "${P_RATE:-0}" -ge 1 ] && pass "http_server_request_duration_seconds_count series found" || fail "HTTP request metric series missing (AC-D4)"
 
 section "Loki (logs)"
