@@ -26,19 +26,26 @@ CANARY="V0-1-CANARY-$(date +%s)-$$"
 PASS=0; FAIL=0; CHECKS=0
 PROJ="openscope-v01"
 
-# Backends are NOT published to the host (AC-C4) — all data queries go through
-# `docker exec` inside the compose network, where the backend APIs live.
-pq() { # prometheus query
-  docker exec "$PROJ-prometheus" wget -qO- "http://127.0.0.1:9090/api/v1/query?query=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$1")" 2>/dev/null
+# Backends are NOT published to the host (AC-C4). Query through a disposable
+# curl container attached to the compose network (backend images are slim and
+# lack /bin/sh + wget, so docker exec is unreliable for loki/tempo).
+QUERY_IMAGE="${QUERY_IMAGE:-curlimages/curl:8.10.1}"
+qcurl() { # <url> [extra-args...]
+  docker run --rm --network "${PROJ}_openscope-net" --entrypoint /bin/sh \
+    "$QUERY_IMAGE" -c 'curl -s "$@"' sh "$@" 2>/dev/null
 }
-lq() { # loki query (POST)
-  docker exec "$PROJ-loki" /bin/sh -c "wget -qO- --post-data='query=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$1")&limit=200' 'http://127.0.0.1:3100/loki/api/v1/query'" 2>/dev/null
+pq() { # prometheus query
+  qcurl "http://prometheus:9090/api/v1/query?query=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' \"$1\")"
+}
+lq() { # loki query (POST to query_range for streams)
+  qcurl -X POST "http://loki:3100/loki/api/v1/query_range" \
+    --data-urlencode "query=$1" --data-urlencode "limit=200"
 }
 tq_search() { # tempo search
-  docker exec "$PROJ-tempo" /bin/sh -c "wget -qO- 'http://127.0.0.1:3200/api/search?tags=$1&limit=$2'" 2>/dev/null
+  qcurl "http://tempo:3200/api/search?tags=$1&limit=$2"
 }
 tq_trace() { # tempo trace by id
-  docker exec "$PROJ-tempo" /bin/sh -c "wget -qO- 'http://127.0.0.1:3200/api/traces/$1'" 2>/dev/null
+  qcurl "http://tempo:3200/api/traces/$1"
 }
 
 pass() { PASS=$((PASS+1)); CHECKS=$((CHECKS+1)); echo "  PASS $*"; }
@@ -107,27 +114,32 @@ if [ "${T_TOTAL:-0}" -ge 1 ]; then
   TID="$(tq_search service.name%3Dopenscope-sample 1 | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["traces"][0]["traceID"])' 2>/dev/null || true)"
   if [ -n "${TID:-}" ]; then
     pass "fetched traceID=$TID"
-    # resource attributes on the first span
+    # resource attributes on the first batch (Tempo returns list of {key,value})
     ATTRS="$(tq_trace "$TID" | python3 -c '
 import sys,json
 d=json.load(sys.stdin)
-def walk(o):
-    if isinstance(o,dict):
-        if "resource" in o and "attributes" in o["resource"]: yield o["resource"]["attributes"]
-        if "attributes" in o: yield o["attributes"]
-        for v in o.values(): yield from walk(v)
-    elif isinstance(o,list):
-        for v in o: yield from walk(v)
 attrs={}
-for a in walk(d):
-    if isinstance(a,dict):
-        for k,v in a.items(): attrs[k]=v
+def collect_list(al):
+    for a in al or []:
+        k=a.get("key"); v=a.get("value") or {}
+        val=v.get("stringValue") if v.get("stringValue") is not None else (v.get("intValue") if v.get("intValue") is not None else "")
+        if k: attrs[k]=str(val)
+for b in d.get("batches") or []:
+    collect_list(b.get("resource",{}).get("attributes"))
+# also collect span-level attributes for status/error evidence
+for b in d.get("batches") or []:
+    for ss in b.get("scopeSpans") or []:
+        for s in ss.get("spans") or []:
+            for a in s.get("attributes") or []:
+                k=a.get("key"); v=a.get("value") or {}
+                if k=="http.response.status_code": attrs["span.http.response.status_code"]=str(v.get("intValue",""))
+            if s.get("status",{}).get("code")==2: attrs["span.status.error"]="1"
 print(json.dumps(attrs))' 2>/dev/null || echo '{}')"
     for key in site.id project.id deployment.environment.name service.namespace service.name service.instance.id service.version; do
       echo "$ATTRS" | grep -q "\"$key\"" && pass "trace resource attr $key" || fail "trace resource attr $key missing"
     done
-    # failure trace: expect a span with status code 2 (ERROR) in the sample service
-    FAILED="$(echo "$ATTRS" | grep -c 'http.response.status_code.*500\|"status.code":2' || true)"
+    # failure trace: expect a span with status code 2 (ERROR) or http 500 in the sample service
+    FAILED="$(echo "$ATTRS" | grep -c 'span.status.error":"1"\|span.http.response.status_code":"500"' || true)"
     [ "$FAILED" -ge 1 ] && pass "failure span evidence present" || fail "no ERROR/500 evidence in trace (check span statuses)"
   else
     fail "could not extract traceID from Tempo search"
@@ -137,11 +149,12 @@ else
 fi
 
 section "Prometheus (metrics)"
-P_INFO="$(pq target_info | python3 -c '
+P_INFO="$(pq 'target_info{project_id="openscope-v01"}' | python3 -c '
 import sys,json
 d=json.load(sys.stdin)
 rows=d.get("data",{}).get("result",[])
-found=[m.get("metric",{}) for m in rows if m.get("metric",{}).get("service_name")=="openscope-sample"]
+# OpenTelemetry->Prometheus keeps service identity in the job label
+found=[m.get("metric",{}) for m in rows if "openscope-sample" in m.get("metric",{}).get("job","")]
 print(json.dumps(found[0] if found else {}))' 2>/dev/null || echo '{}')"
 if [ "$P_INFO" != "{}" ]; then
   pass "target_info present for openscope-sample"
@@ -151,7 +164,7 @@ if [ "$P_INFO" != "{}" ]; then
 else
   fail "target_info missing for openscope-sample (AC-D4/D5)"
 fi
-P_RATE="$(pq 'sum(rate(http_server_request_duration_seconds_count{service_name="openscope-sample"}[5m]))' | python3 -c '
+P_RATE="$(pq 'sum(rate(http_server_request_duration_seconds_count{job=~".*openscope-sample.*"}[5m]))' | python3 -c '
 import sys,json
 d=json.load(sys.stdin); r=d.get("data",{}).get("result",[]); print(len(r))' 2>/dev/null || echo 0)"
 [ "${P_RATE:-0}" -ge 1 ] && pass "http_server_request_duration_seconds_count series found" || fail "HTTP request metric series missing (AC-D4)"
@@ -178,11 +191,17 @@ if [ "${L_LINES:-0}" -ge 1 ]; then
 else
   fail "no logs in Loki (AC-D6)"
 fi
-# correlation: log trace_id == tempo traceID
-if [ -n "${TID:-}" ] && [ -n "$L_TID" ] && [ "$TID" = "$L_TID" ]; then
-  pass "log trace_id matches Tempo traceID (AC-D7/AC-08)"
+# correlation: a Loki stream tagged with the SAME trace_id as the Tempo trace must exist
+if [ -n "${TID:-}" ]; then
+  C_N="$(lq "{service_name=\"openscope-sample\", trace_id=\"$TID\"}" | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+s=d.get("data",{}).get("result",[])
+print(sum(len(x.get("values",[])) for x in s))' 2>/dev/null || echo 0)"
+  [ "${C_N:-0}" -ge 1 ] && pass "log trace_id matches Tempo traceID (AC-D7/AC-08, streams=$C_N)" \
+                          || fail "trace correlation mismatch: tempo=$TID loki streams=0"
 else
-  fail "trace correlation mismatch: tempo=$TID loki=$L_TID"
+  fail "trace correlation skipped: no TID"
 fi
 
 section "redaction (AC-E1..E3)"

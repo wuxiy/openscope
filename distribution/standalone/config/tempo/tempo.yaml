@@ -1,23 +1,17 @@
-# OpenScope V0.1 Tempo — monolithic, local filesystem backend (pre-release single-host validation only).
+# OpenScope V0.1 Tempo — Tempo 3.x monolithic, local filesystem storage.
+# NOTE: Tempo 3.x removed the top-level ingester/compactor keys from the config
+# surface used here; storage is unified under storage.trace (local backend).
 server:
   http_listen_port: 3200
-  grpc_listen_port: 4317
 
 distributor:
   receivers:
     otlp:
       protocols:
         grpc:
+          endpoint: 0.0.0.0:4317
         http:
-
-ingester:
-  trace_idle_period: 10s
-  max_block_bytes: 1_000_000
-  max_block_duration: 5m
-
-compactor:
-  compaction:
-    block_retention: 3d
+          endpoint: 0.0.0.0:4318
 
 storage:
   trace:
