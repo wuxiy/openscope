@@ -76,10 +76,9 @@ if [ -f "$AGENT_JAR" ]; then
   java \
     -javaagent:"$AGENT_JAR" \
     -Dotel.service.name=openscope-sample \
-    -Dotel.service.namespace=openscope-demo \
     -Dotel.service.instance.id=openscope-sample-01 \
     -Dotel.service.version=0.1.0 \
-    -Dotel.resource.attributes=site.id=dev-host,project.id=openscope-v01,deployment.environment.name=acceptance \
+    -Dotel.resource.attributes=site.id=dev-host,project.id=openscope-v01,deployment.environment.name=acceptance,service.namespace=openscope-demo \
     -Dotel.exporter.otlp.endpoint="$OTLP_ENDPOINT" \
     -Dotel.metrics.exporter=otlp \
     -Dotel.traces.exporter=otlp \
@@ -179,6 +178,12 @@ print(err)' 2>/dev/null || echo 0)"
 else
   fail "no traces in Tempo (AC-D2/D3)"
 fi
+
+# wait for OTLP metrics to land in Prometheus (fresh sample push + scrape lag)
+i=0
+until pq 'target_info{project_id="openscope-v01"}' | grep -q "openscope-sample"; do
+  i=$((i+1)); [ "$i" -ge 10 ] && break; sleep 3
+done
 
 section "Prometheus (metrics)"
 P_INFO="$(pq 'target_info{project_id="openscope-v01"}' | python3 -c '
