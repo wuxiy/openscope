@@ -152,9 +152,27 @@ print(json.dumps(attrs))' 2>/dev/null || echo '{}')"
     for key in site.id project.id deployment.environment.name service.namespace service.name service.instance.id service.version; do
       echo "$ATTRS" | grep -q "\"$key\"" && pass "trace resource attr $key" || fail "trace resource attr $key missing"
     done
-    # failure trace: expect a span with status code 2 (ERROR) or http 500 in the sample service
-    FAILED="$(echo "$ATTRS" | grep -c 'span.status.error":"1"\|span.http.response.status_code":"1"' || true)"
-    [ "$FAILED" -ge 1 ] && pass "failure span evidence present" || fail "no ERROR/500 evidence in trace (check span statuses)"
+    # failure evidence: the first search hit is often a 200/204 trace, so collect
+    # error/500 evidence across ALL traces returned by the search: fetch each
+    # trace and look for any span with status.code==2 or http.response.status_code==500.
+    FAILED=0
+    for tid in $(printf '%s' "$T_JSON" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(" ".join(t.get("traceID","") for t in d.get("traces",[])))' 2>/dev/null); do
+      [ -z "$tid" ] && continue
+      HIT="$(tq_trace "$tid" | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+err=0
+for b in d.get("batches") or []:
+    for ss in b.get("scopeSpans") or []:
+        for s in ss.get("spans") or []:
+            if s.get("status",{}).get("code")==2: err=1
+            for a in s.get("attributes") or []:
+                v=a.get("value") or {}
+                if a.get("key")=="http.response.status_code" and str(v.get("intValue","")).startswith("5"): err=1
+print(err)' 2>/dev/null || echo 0)"
+      if [ "$HIT" = "1" ]; then FAILED=1; break; fi
+    done
+    [ "$FAILED" -ge 1 ] && pass "failure span evidence present (500/ERROR across traces)" || fail "no ERROR/500 evidence in trace (check span statuses)"
   else
     fail "could not extract traceID from Tempo search"
   fi
