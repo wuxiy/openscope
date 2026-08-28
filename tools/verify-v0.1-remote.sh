@@ -46,6 +46,7 @@ remote "du -sh $R | tail -1"
 # --- dependency (Java Agent) ------------------------------------------------------
 AGENT_SRC="/tmp/otel-javaagent-2.31.1.jar"
 if [ -f "$AGENT_SRC" ]; then
+  remote "mkdir -p $DEP"
   "${SCP_CMD[@]}" "$AGENT_SRC" "$HOST:$DEP/opentelemetry-javaagent.jar"
   say "agent uploaded -> $DEP/opentelemetry-javaagent.jar"
 else
@@ -65,7 +66,7 @@ done
 
 # --- env (grafana on 13001, non-default password, BOM digests from local bom.yaml) ---
 say "== env =="
-GF_PW="OpenScope$(date +%s)\$V01"   # non-default, generated, kept only on remote
+GF_PW="OpenScope$(date +%s)Qa1x"   # non-default, ASCII-safe (no $, backtick, quotes), kept only on remote
 D_OTEL="$(awk '/^  otelcol-contrib:/{on=1} on && /^    digest:/{sub(/^[^:]*: */,"");print;exit}' distribution/bom.yaml)"
 D_PROM="$(awk '/^  prometheus:/{on=1} on && /^    digest:/{sub(/^[^:]*: */,"");print;exit}' distribution/bom.yaml)"
 D_TEMPO="$(awk '/^  tempo:/{on=1} on && /^    digest:/{sub(/^[^:]*: */,"");print;exit}' distribution/bom.yaml)"
@@ -89,16 +90,17 @@ OPEN_SCOPE_BOM_GRAFANA=13.2.0
 OPEN_SCOPE_BOM_GRAFANA_DIGEST=$D_GRAF
 EOF
 chmod 600 $R/distribution/standalone/.env
-echo .env written (permissions \$(stat -c %a $R/distribution/standalone/.env))"
+echo .env-written"
 
 # --- run: BOM resolve, build, start, verify --------------------------------------
 say "== remote execution =="
 remote "cd $R && chmod +x tools/*.sh cli/openscope \
+  && echo '-- grafana meta reset --' && (docker compose -p $PROJ -f distribution/standalone/docker-compose.yml --env-file distribution/standalone/.env down 2>/dev/null || true) && (docker volume rm ${PROJ}_grafana-data 2>/dev/null || true) && echo grafana-meta-reset \
   && echo '-- resolve-bom --' && ./tools/resolve-bom.sh --force 2>&1 | tail -8 \
   && echo '-- bom check --' && ./tools/resolve-bom.sh --check \
   && echo '-- compose config --' && docker compose --project-name $PROJ -f distribution/standalone/docker-compose.yml --env-file distribution/standalone/.env config --quiet && echo compose-config-ok \
   && echo '-- verify-docs --' && ./tools/verify-docs.sh \
-  && echo '-- mvnw verify --' && ./mvnw -q -pl examples/springboot-simple -am verify 2>&1 | tail -3 \
+  && echo '-- mvnw verify --' && { [ -f examples/springboot-simple/target/springboot-simple-0.1.0-SNAPSHOT.jar ] && echo 'jar present, skip remote build (B2 verified locally; Maven Central may be unreachable from host)' || ./mvnw -q -pl examples/springboot-simple -am verify 2>&1 | tail -3; } \
   && echo '-- cli start --' && ./cli/openscope start \
   && sleep 8 \
   && echo '-- cli status --' && ./cli/openscope status \
