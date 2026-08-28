@@ -79,7 +79,7 @@ if [ -f "$AGENT_JAR" ]; then
     -Dotel.service.namespace=openscope-demo \
     -Dotel.service.instance.id=openscope-sample-01 \
     -Dotel.service.version=0.1.0 \
-    -Dotel.resource.attributes=site.id=dev-host,project.id=openscope-v01,demo,deployment.environment.name=acceptance \
+    -Dotel.resource.attributes=site.id=dev-host,project.id=openscope-v01,deployment.environment.name=acceptance \
     -Dotel.exporter.otlp.endpoint="$OTLP_ENDPOINT" \
     -Dotel.metrics.exporter=otlp \
     -Dotel.traces.exporter=otlp \
@@ -109,7 +109,14 @@ echo
 sleep 5   # allow batch flush + one scrape/query interval
 
 section "Tempo (traces)"
-T_TOTAL="$(tq_search service.name%3Dopenscope-sample 20 | python3 -c 'import sys,json;d=json.load(sys.stdin);print(len(d.get("traces",[])))' 2>/dev/null || echo 0)"
+# Tempo vParquet search index has a short visibility window after trace ingest;
+# poll (up to ~30s) instead of a single shot so a slow flush is not a false FAIL.
+T_TOTAL=0
+i=0
+while [ "${T_TOTAL:-0}" -lt 1 ] && [ "$i" -lt 10 ]; do
+  T_TOTAL="$(tq_search service.name%3Dopenscope-sample 20 | python3 -c 'import sys,json;d=json.load(sys.stdin);print(len(d.get("traces",[])))' 2>/dev/null || echo 0)"
+  if [ "${T_TOTAL:-0}" -lt 1 ]; then i=$((i+1)); sleep 3; fi
+done
 if [ "${T_TOTAL:-0}" -ge 1 ]; then
   pass "traces found in Tempo (n=$T_TOTAL)"
   # Iterate over ALL recent traces: the first search hit is often a 200 trace,
@@ -205,14 +212,24 @@ fi
 # NOTE: trace_id is structured metadata (non-indexed) on this Loki 3.x stack —
 # selector matching ({...trace_id=...}) returns 0; pipeline filter (| trace_id=)
 # matches. See local acceptance notes 2026-08-28.
+# Search order is not guaranteed to return the traced request first, so iterate
+# until we find a trace that actually has matching logs in Loki.
+CORR_OK=0
 if [ -n "${TID:-}" ]; then
-  C_N="$(lq "{service_name=\"openscope-sample\"} | trace_id=\"$TID\"" | python3 -c '
+  for cand in $(printf '%s' "$T_JSON" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(" ".join(t.get("traceID","") for t in d.get("traces",[])))' 2>/dev/null); do
+    [ -z "$cand" ] && continue
+    C_N="$(lq "{service_name=\"openscope-sample\"} | trace_id=\"$cand\"" | python3 -c '
 import sys,json
 d=json.load(sys.stdin)
 s=d.get("data",{}).get("result",[])
 print(sum(len(x.get("values",[])) for x in s))' 2>/dev/null || echo 0)"
-  [ "${C_N:-0}" -ge 1 ] && pass "log trace_id matches Tempo traceID (AC-D7/AC-08, streams=$C_N)" \
-                          || fail "trace correlation mismatch: tempo=$TID loki streams=0"
+    if [ "${C_N:-0}" -ge 1 ]; then
+      pass "log trace_id matches Tempo traceID (AC-D7/AC-08, trace=$cand streams=$C_N)"
+      CORR_OK=1
+      break
+    fi
+  done
+  [ "$CORR_OK" -eq 1 ] || fail "trace correlation mismatch: no recent Tempo trace has matching Loki logs (last tried=$TID)"
 else
   fail "trace correlation skipped: no TID"
 fi
