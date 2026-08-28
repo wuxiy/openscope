@@ -85,6 +85,7 @@ if [ -f "$AGENT_JAR" ]; then
     -Dotel.logs.exporter=otlp \
     -Dotel.exporter.otlp.protocol=http/protobuf \
     -Dotel.exporter.otlp.metrics.temporality.preference=cumulative \
+    -Dotel.metric.export.interval=5000 \
     -Dotel.instrumentation.logback-appender.enabled=true \
     -jar "$SAMPLE_JAR" >/tmp/openscope-sample.log 2>&1 &
   SAMPLE_PID=$!
