@@ -1,0 +1,14 @@
+== H3 re-evidence: 2026-08-28 16:43:01 ==
+traffic-at=1787906581
+ok:200 fail:500
+--- poll Tempo windowed search until NEW traces appear (max 12x5s) ---
+  poll#1: traces=0
+  poll#2: traces=0
+  poll#3: traces=0
+  poll#4: traces=0
+  poll#5: traces=0
+  poll#6: traces=2
+  NEW TRACE 16:43:01 GET /fail d9e51e5c8015d94d
+  NEW TRACE 16:43:01 GET /ok 9172a2b512bbdc8d
+H3-tempo-found=1
+DONE

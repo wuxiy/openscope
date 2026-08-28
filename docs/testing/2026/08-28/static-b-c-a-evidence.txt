@@ -1,0 +1,24 @@
+== B2 mvnw verify (local) ==
+B2-exit=0
+== B4 collector validate ==
+collector-validate-exit=0
+== B4 promtool ==
+promtool-exit=0 (SUCCESS: prom.yml valid)
+== B4 loki verify ==
+level=info "config is valid"
+== B5 bash -n ==
+bash-n tools/verify-v0.1.sh: OK
+bash-n tools/verify-v0.1-remote.sh: OK
+bash-n tools/verify-docs.sh: OK
+bash-n tools/resolve-bom.sh: OK
+bash-n cli/openscope: OK
+== C5 密码拒绝 ==
+default-password: ERROR GF_ADMIN_PASSWORD must be a non-default secret (AC-C5)
+empty-password: ERROR GF_ADMIN_PASSWORD must be a non-default secret (AC-C5)
+admin: ERROR GF_ADMIN_PASSWORD must be a non-default secret (AC-C5)
+== A3 dual-arch (registry API) ==
+otelcol-contrib: amd64 arm64 (registry index)
+prometheus: amd64 arm64
+tempo: amd64 arm64
+loki: amd64 arm64
+grafana: amd64 arm64

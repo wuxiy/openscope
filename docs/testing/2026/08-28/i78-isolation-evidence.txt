@@ -1,0 +1,63 @@
+== I-evidence: 2026-08-28 16:42:18 ==
+--- all non-openscope containers (snapshot) ---
+138de8592b40 trusting_dirac Up 5 hours
+e1f20ec19b56 data-os-dev-mpi-service-1 Up 15 hours (healthy)
+95f5f1f77a65 data-os-dev-data-api-1 Up 22 hours (healthy)
+e5cf57f6fc81 data-os-dev-control-plane-1 Up 22 hours (healthy)
+e3f54a9fac21 data-os-dev-ai-ready-service-1 Up 27 hours (healthy)
+77a3a52417ab medical-platform-openmetadata-1 Up 27 hours (healthy)
+035a4475ac2c data-os-dev-quality-runner-1 Up 7 days (healthy)
+6e8a365c219c data-os-dev-seatunnel-master-1 Up 7 days (healthy)
+398fe653e2c0 data-os-dev-portal-1 Up 22 hours
+0d035843bb51 forgeops-gateway-1 Up 8 days
+33627c8fea4d multica-backend-1 Up 9 days
+b30b1032b6e7 hapi-mdm-spike Up 9 days
+26e91847321c multica-frontend-1 Up 13 days
+613504ea1a8c data-os-dev-rustfs-1 Up 2 weeks (healthy)
+84ba69f09d41 data-os-dev-scheduler-token-rotator-1 Up 2 weeks
+84937742facd nervous_ishizaka Up 2 weeks
+e7a272178508 data-os-dev-notification-receiver-1 Up 2 weeks (healthy)
+56b27c72a679 data-os-dev-dolphinscheduler-worker-1 Up 2 weeks (healthy)
+568c800e5201 data-os-dev-dolphinscheduler-api-1 Up 2 weeks (healthy)
+76363f5f33ed data-os-dev-dolphinscheduler-master-1 Up 2 weeks (healthy)
+3635879474e2 data-os-dev-dolphinscheduler-alert-1 Up 2 weeks (healthy)
+5d18386d2a75 data-os-dev-dolphinscheduler-postgresql-1 Up 2 weeks (healthy)
+d4549553f838 magicops-console Up 3 weeks (healthy)
+facc3098edb1 medical-platform-gateway-1 Up 4 weeks
+6a98a5f8843d medical-platform-nifi-1 Up 4 weeks
+6124916d73b3 medical-platform-superset-1 Up 8 days (healthy)
+d0944ef24e1d minifi-edge Up 7 days
+d5d21f901019 dbgpt Up 4 weeks
+0ae7492b6654 medical-platform-keycloak-1 Up 4 weeks
+c630e68482f0 medical-platform-mysql-1 Up 4 weeks (healthy)
+9cf644d8fb62 medical-platform-elasticsearch-1 Up 4 weeks (healthy)
+382cc12e1e4c medical-platform-keycloak-db-1 Up 4 weeks (healthy)
+ca9b72a0d0c2 jpom-server Up 4 weeks (healthy)
+fe44b41e69dd multica-postgres-1 Up 4 weeks (healthy)
+--- openscope-v01 containers ---
+openscope-v01-loki Up 38 minutes
+openscope-v01-tempo Up 39 minutes
+openscope-v01-prometheus Up 39 minutes
+openscope-v01-grafana Up 39 minutes
+openscope-v01-collector Up 39 minutes
+--- docker system df (before any op) ---
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          80        37        57.88GB   20.19GB (34%)
+Containers      44        39        1.663GB   651.3kB (0%)
+Local Volumes   46        29        1.741GB   239.6MB (13%)
+Build Cache     284       0         16.14GB   7.382GB
+--- explicit: we do NOT run prune; checking 'prune' absent from our commands ---
+prune-command-not-invoked: (no prune in evidence)
+--- volumes owned by openscope-v01 vs others ---
+openscope-v01_grafana-data
+openscope-v01_loki-data
+openscope-v01_prometheus-data
+openscope-v01_tempo-data
+--- networks owned by openscope-v01 ---
+openscope-v01_openscope-net
+--- host env (I2) ---
+16
+               total        used        free      shared  buff/cache   available
+Mem:              62          29           1           0          32          32
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+DONE
