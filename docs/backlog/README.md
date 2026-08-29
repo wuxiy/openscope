@@ -10,7 +10,7 @@ The backlog is not a replacement for requirements, owner docs, or plans. It only
 
 | Priority | Item            | Requirement                | Owner Doc            | Plan                        | Status              | AI Autonomy | Blocker                              | Last Checked   |
 | -------- | --------------- | -------------------------- | -------------------- | --------------------------- | ------------------- | ----------- | ------------------------------------ | -------------- |
-| P0       | V0.1 standalone 发行版（三信号闭环 + 基础 Dashboard + 最小 CLI） | `docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md` | `docs/architecture/v0.1-standalone-contract.md` | `docs/plans/2026-08-27-1937-v0.1-standalone-distribution-plan.md`（completed） | `done` | `implement` | none（2026-08-28 验收 25/25 accepted） | 2026-08-28 |
+| P0       | V0.1 standalone 发行版（三信号闭环 + 基础 Dashboard + 最小 CLI） | `docs/requirements/2026-08-27-1937-v0.1-standalone-distribution.md` | `docs/architecture/v0.1-standalone-contract.md` | `docs/plans/2026-08-29-1502-v0.1-acceptance-remediation-plan.md`（completed） | `done` | `plan-first` | `none` | 2026-08-29 |
 | P1       | Central 拓扑与跨网络安全 | 待 V0.1 验收后综合 | `OpenScope-技术架构.md` §14.2/§17 | none | `idea` | `ask-first` | 依赖 P0 关闭；认证/TLS/租户合同未建立 | 2026-08-27 |
 | P2       | Spring Boot Starter 与自研 Java 模块 | 待 V0.1 验收和真实 Agent 缺口后综合 | `docs/architecture/module-boundaries.md` java/* | none | `idea` | `plan-first` | 依赖 P0 关闭与真实需求证据 | 2026-08-27 |
 

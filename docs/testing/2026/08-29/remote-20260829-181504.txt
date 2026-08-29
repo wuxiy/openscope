@@ -1,0 +1,17 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+--workdir-filesystem--
+/dev/vdb        200G  6.0G  194G   3% /root
+--ports--
+ports free
+initial OpenScope running containers=0
+== payload sync (7d52e669bdbbdfb37e09bd29b8a9affe3a62603f) ==
+payload transferred
+payload manifest sha256=1fb8c0fa8fefeadd70b3bc9ca150eb7dec2f18b5491f3e4bbc229a265cec8eec
+payload git state=dirty (manifest identifies working-tree contents)
+payload-manifest-ok
+== isolated JDK 21.0.12+8 ==

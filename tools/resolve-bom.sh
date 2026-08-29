@@ -51,6 +51,7 @@ plan() { # key
     tempo)           echo "dockerhub|grafana/tempo|3.0.3" ;;
     loki)            echo "dockerhub|grafana/loki|3.7.6" ;;
     grafana)         echo "dockerhub|grafana/grafana|13.2.0" ;;
+    query-curl)      echo "dockerhub|curlimages/curl|8.10.1" ;;
     *) echo "unknown-key" ;;
   esac
 }
@@ -68,7 +69,7 @@ echo "OpenScope BOM resolver — $BOM_FILE"
 
 if [ "${1:-}" = "--check" ]; then
   bad=0
-  for key in otelcol-contrib prometheus tempo loki grafana; do
+  for key in otelcol-contrib prometheus tempo loki grafana query-curl; do
     d=$(awk -v k="^  $key:" '$0 ~ k {on=1} on && /^    digest:/ {sub(/^[^:]*: */, ""); print; exit}' "$BOM_FILE")
     if printf '%s' "$d" | grep -qE '^sha256:[0-9a-f]{64}$'; then
       echo "  ok $key $d"
@@ -76,11 +77,21 @@ if [ "${1:-}" = "--check" ]; then
       echo "  FAIL $key digest='${d:-<empty>}'"; bad=1
     fi
   done
+  jdk_sha=$(awk '/^  java-jdk:/{on=1} on && /^    sha256:/{sub(/^[^:]*: */, ""); print; exit}' "$BOM_FILE")
+  jdk_source=$(awk '/^  java-jdk:/{on=1} on && /^    source:/{sub(/^[^:]*: */, ""); print; exit}' "$BOM_FILE")
+  jdk_mirror=$(awk '/^  java-jdk:/{on=1} on && /^    mirror:/{sub(/^[^:]*: */, ""); print; exit}' "$BOM_FILE")
+  if printf '%s' "$jdk_sha" | grep -qE '^[0-9a-f]{64}$' \
+    && printf '%s' "$jdk_source" | grep -qE '^https://github\.com/adoptium/temurin21-binaries/releases/download/' \
+    && printf '%s' "$jdk_mirror" | grep -qE '^https://'; then
+    echo "  ok java-jdk sha256:$jdk_sha"
+  else
+    echo "  FAIL java-jdk pin sha='${jdk_sha:-<empty>}' source='${jdk_source:-<empty>}'"; bad=1
+  fi
   [ "$bad" -eq 0 ] && echo "BOM digest check PASSED" || { echo "BOM digest check FAILED" >&2; exit 1; }
   exit 0
 fi
 
-for key in otelcol-contrib prometheus tempo loki grafana; do
+for key in otelcol-contrib prometheus tempo loki grafana query-curl; do
   IFS='|' read -r registry repo tag <<< "$(plan "$key")"
   d=""
   case "$registry" in

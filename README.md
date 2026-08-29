@@ -3,7 +3,7 @@
 > **OpenTelemetry-native observability distribution** —— 轻量、跨环境（standalone / central / distributed）的可观测性框架。
 > OTel Native + Collector Centric + One Official Backend + Multiple Deployment Topologies。
 
-[![V0.1 acceptance](https://img.shields.io/badge/V0.1-accepted-2ea44f)](docs/testing/v0.1-acceptance-checklist.md)
+[![V0.1 acceptance](https://img.shields.io/badge/V0.1-accepted-brightgreen)](docs/testing/v0.1-acceptance-checklist.md)
 
 ## 这是什么
 
@@ -40,7 +40,7 @@ open http://127.0.0.1:3000   # OpenScope Overview（按 project/service 入口�
 
 ## 验收状态
 
-- ✅ **V0.1 standalone accepted**（2026-08-28）：25/25 检查全过 ×2、restart 持久化、canary 三路脱敏、doctor 失败注入、amd64 远端真实运行
+- 🟢 **V0.1 standalone accepted**（2026-08-29）：实现、完整机器验收与独立人类 closure audit 均已通过；两轮 `36/36`、五组件 Doctor 故障注入、持久化凭据同步及共享主机隔离均有证据
 - 证据：`docs/testing/2026/08-28.md` + `docs/testing/2026/08-28/`
 - 遗留：arm64 真实运行（仅 manifest 证据）；central/distributed 与 Tail Sampling 为 V1.x
 

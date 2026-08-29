@@ -7,5 +7,18 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# Dashboard RED queries filter business metrics directly by the canonical
+# OpenScope resource dimensions. Prometheus does not promote OTel Resource
+# attributes onto every metric unless they are listed explicitly here.
+otlp:
+  promote_resource_attributes:
+    - site.id
+    - project.id
+    - deployment.environment.name
+    - service.namespace
+    - service.name
+    - service.instance.id
+    - service.version
+
 # Native OTLP ingestion is enabled on the command line via --web.enable-otlp-receiver.
 scrape_configs: []

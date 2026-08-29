@@ -21,15 +21,26 @@ OTLP_ENDPOINT="http://127.0.0.1:4318"
 SAMPLE_JAR="examples/springboot-simple/target/springboot-simple-0.1.0-SNAPSHOT.jar"
 AGENT_JAR="${AGENT_JAR:-dependencies/opentelemetry-javaagent.jar}"
 SAMPLE_PORT="8090"
+SAMPLE_LOG="${OPEN_SCOPE_SAMPLE_LOG:-$ROOT_DIR/distribution/standalone/.data/verify-v0.1-sample.log}"
 SAMPLE_PID=""
-CANARY="V0-1-CANARY-$(date +%s)-$$"
+CANARY="V0-1-APP-CANARY-$(date +%s)-$$"
+COLLECTOR_CANARY="V0-1-COLLECTOR-CANARY-$(date +%s)-$$"
+CONTROL_ID="probe-$(date +%s)-$$"
 PASS=0; FAIL=0; CHECKS=0
 PROJ="openscope-v01"
+ENV_FILE="$ROOT_DIR/distribution/standalone/.env"
+GRAFANA_URL=""
 
 # Backends are NOT published to the host (AC-C4). Query through a disposable
 # curl container attached to the compose network (backend images are slim and
 # lack /bin/sh + wget, so docker exec is unreliable for loki/tempo).
-QUERY_IMAGE="${QUERY_IMAGE:-curlimages/curl:8.10.1}"
+bom_get() { # bom_get <image-key> <field>
+  local key="$1" field="$2"
+  awk -v k="^  $key:" -v f="^    $field:" '$0 ~ k {on=1; next} on && /^  [a-z]/ {on=0} on && $0 ~ f {sub(/^[[:space:]]*[^:]*:[[:space:]]*/, ""); print; exit}' distribution/bom.yaml
+}
+QUERY_TAG="$(bom_get query-curl tag)"
+QUERY_DIGEST="$(bom_get query-curl digest)"
+QUERY_IMAGE="${QUERY_IMAGE:-curlimages/curl:$QUERY_TAG@$QUERY_DIGEST}"
 qcurl() { # <url> [extra-args...]
   docker run --rm --network "${PROJ}_openscope-net" --entrypoint /bin/sh \
     "$QUERY_IMAGE" -c 'curl -s "$@"' sh "$@" 2>/dev/null
@@ -48,10 +59,19 @@ tq_search() { # tempo search
 tq_trace() { # tempo trace by id
   qcurl "http://tempo:3200/api/traces/$1"
 }
+gcurl() { # Grafana API path
+  curl -fsS -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+    -H 'Accept: application/json' "$GRAFANA_URL$1"
+}
+otlp_post() { # <traces|metrics|logs>, payload on stdin
+  curl -fsS -H 'Content-Type: application/json' --data-binary @- \
+    "$OTLP_ENDPOINT/v1/$1" >/dev/null
+}
 
 pass() { PASS=$((PASS+1)); CHECKS=$((CHECKS+1)); echo "  PASS $*"; }
 fail() { FAIL=$((FAIL+1)); CHECKS=$((CHECKS+1)); echo "  FAIL $*"; }
 section() { echo; echo "=== $* ==="; }
+contains() { printf '%s' "$1" | grep -Fq "$2"; }
 
 cleanup() {
   [ -n "$SAMPLE_PID" ] && kill "$SAMPLE_PID" 2>/dev/null || true
@@ -64,9 +84,24 @@ trap cleanup EXIT
 # --- preflight -------------------------------------------------------------------
 section "preflight"
 [ -f "$SAMPLE_JAR" ] || { echo "  FAIL sample jar missing: $SAMPLE_JAR"; exit 1; }
+[ -f "$ENV_FILE" ] || { echo "  FAIL runtime env missing: $ENV_FILE"; exit 1; }
+# shellcheck disable=SC1090
+set -a; source "$ENV_FILE"; set +a
+GRAFANA_URL="http://127.0.0.1:${GRAFANA_PORT:-3000}"
 command -v docker >/dev/null || { echo "  FAIL docker missing"; exit 1; }
+command -v python3 >/dev/null || { echo "  FAIL python3 missing"; exit 1; }
+printf '%s' "$QUERY_IMAGE" | grep -qE '@sha256:[0-9a-f]{64}$' || { echo "  FAIL query image is not digest-pinned"; exit 1; }
 docker ps --format '{{.Names}}' | grep -qE "^openscope-v01-(collector|prometheus|tempo|loki|grafana)$" || {
   echo "  FAIL stack not running (run: ./cli/openscope start)"; exit 1; }
+python3 - "$SAMPLE_PORT" <<'PY' || {
+import socket,sys
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+    listener.bind(("127.0.0.1", int(sys.argv[1])))
+PY
+  echo "  FAIL sample port $SAMPLE_PORT is already occupied; refusing to test against a process this run did not start"
+  exit 1
+}
+mkdir -p "$(dirname "$SAMPLE_LOG")"
 echo "  ok stack running"
 
 # --- start sample with Java Agent ------------------------------------------------
@@ -87,12 +122,23 @@ if [ -f "$AGENT_JAR" ]; then
     -Dotel.exporter.otlp.metrics.temporality.preference=cumulative \
     -Dotel.metric.export.interval=5000 \
     -Dotel.instrumentation.logback-appender.enabled=true \
-    -jar "$SAMPLE_JAR" >/tmp/openscope-sample.log 2>&1 &
+    -jar "$SAMPLE_JAR" >"$SAMPLE_LOG" 2>&1 &
   SAMPLE_PID=$!
   for i in $(seq 1 30); do
+    kill -0 "$SAMPLE_PID" 2>/dev/null || {
+      fail "sample process exited before readiness (port collision or startup failure)"
+      tail -5 "$SAMPLE_LOG"
+      exit 1
+    }
     curl -sf -o /dev/null "http://127.0.0.1:$SAMPLE_PORT/ok" && break || sleep 1
   done
-  curl -sf -o /dev/null "http://127.0.0.1:$SAMPLE_PORT/ok" && echo "  ok app up (pid $SAMPLE_PID)" || { fail "sample app did not become ready"; tail -5 /tmp/openscope-sample.log; exit 1; }
+  if kill -0 "$SAMPLE_PID" 2>/dev/null && curl -sf -o /dev/null "http://127.0.0.1:$SAMPLE_PORT/ok"; then
+    echo "  ok app up (pid $SAMPLE_PID)"
+  else
+    fail "sample app did not become ready as the process started by this run"
+    tail -5 "$SAMPLE_LOG"
+    exit 1
+  fi
   pass "sample started under Java Agent $([ -f "$AGENT_JAR" ] && echo yes || echo no)"
 fi
 
@@ -104,8 +150,31 @@ curl -s -o /dev/null -w "ok:%{http_code} " "http://127.0.0.1:$SAMPLE_PORT/ok"
 curl -s -o /dev/null -w "fail:%{http_code} " "http://127.0.0.1:$SAMPLE_PORT/fail"
 curl -s -o /dev/null -w "sensitive:%{http_code} " \
   -H "Authorization: $CANARY_AUTH" -H "Cookie: $CANARY_COOKIE" \
+  -H "X-Token: token-$CANARY" -H "X-Password: password-$CANARY" \
+  -H "X-CANARY: $CANARY" \
   "http://127.0.0.1:$SAMPLE_PORT/sensitive"
 echo
+
+# Exercise Collector-side deletion independently from Java Agent non-capture.
+# Each signal carries a safe control identifier plus the same synthetic secret
+# in every sensitive key configured in collector.yaml. The control must arrive;
+# the secret must not.
+read -r PROBE_TRACE_ID PROBE_SPAN_ID PROBE_START_NS PROBE_END_NS < <(python3 -c '
+import secrets,time
+now=time.time_ns()
+print(secrets.token_hex(16), secrets.token_hex(8), now, now+1_000_000)')
+
+cat <<JSON | otlp_post traces
+{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"openscope-redaction-probe"}},{"key":"service.namespace","value":{"stringValue":"openscope-demo"}},{"key":"service.instance.id","value":{"stringValue":"redaction-probe-01"}},{"key":"service.version","value":{"stringValue":"0.1.0"}},{"key":"site.id","value":{"stringValue":"dev-host"}},{"key":"project.id","value":{"stringValue":"openscope-v01"}},{"key":"deployment.environment.name","value":{"stringValue":"acceptance"}}]},"scopeSpans":[{"scope":{"name":"openscope-redaction-probe"},"spans":[{"traceId":"$PROBE_TRACE_ID","spanId":"$PROBE_SPAN_ID","name":"collector-redaction-trace","kind":2,"startTimeUnixNano":"$PROBE_START_NS","endTimeUnixNano":"$PROBE_END_NS","attributes":[{"key":"test_id","value":{"stringValue":"$CONTROL_ID"}},{"key":"http.request.header.authorization","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.cookie","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.x-password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.response.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"body","value":{"stringValue":"$COLLECTOR_CANARY"}}],"status":{"code":1}}]}]}]}
+JSON
+
+cat <<JSON | otlp_post metrics
+{"resourceMetrics":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"openscope-redaction-probe"}},{"key":"service.namespace","value":{"stringValue":"openscope-demo"}},{"key":"service.instance.id","value":{"stringValue":"redaction-probe-01"}},{"key":"service.version","value":{"stringValue":"0.1.0"}},{"key":"site.id","value":{"stringValue":"dev-host"}},{"key":"project.id","value":{"stringValue":"openscope-v01"}},{"key":"deployment.environment.name","value":{"stringValue":"acceptance"}}]},"scopeMetrics":[{"scope":{"name":"openscope-redaction-probe"},"metrics":[{"name":"openscope_redaction_probe","gauge":{"dataPoints":[{"attributes":[{"key":"test_id","value":{"stringValue":"$CONTROL_ID"}},{"key":"http.request.header.authorization","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.cookie","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.x-password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.response.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"body","value":{"stringValue":"$COLLECTOR_CANARY"}}],"timeUnixNano":"$PROBE_END_NS","asDouble":1.0}]}}]}]}]}
+JSON
+
+cat <<JSON | otlp_post logs
+{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"openscope-redaction-probe"}},{"key":"service.namespace","value":{"stringValue":"openscope-demo"}},{"key":"service.instance.id","value":{"stringValue":"redaction-probe-01"}},{"key":"service.version","value":{"stringValue":"0.1.0"}},{"key":"site.id","value":{"stringValue":"dev-host"}},{"key":"project.id","value":{"stringValue":"openscope-v01"}},{"key":"deployment.environment.name","value":{"stringValue":"acceptance"}}]},"scopeLogs":[{"scope":{"name":"openscope-redaction-probe"},"logRecords":[{"timeUnixNano":"$PROBE_END_NS","severityNumber":9,"severityText":"INFO","body":{"stringValue":"collector redaction control $CONTROL_ID"},"attributes":[{"key":"test_id","value":{"stringValue":"$CONTROL_ID"}},{"key":"http.request.header.authorization","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.cookie","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.header.x-password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.request.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"http.response.body","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"token","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"password","value":{"stringValue":"$COLLECTOR_CANARY"}},{"key":"body","value":{"stringValue":"$COLLECTOR_CANARY"}}]}]}]}]}
+JSON
 sleep 5   # allow batch flush + one scrape/query interval
 
 section "Tempo (traces)"
@@ -215,6 +284,23 @@ d=json.load(sys.stdin); r=d.get("data",{}).get("result",[]); print(len(r))' 2>/d
 done
 [ "${P_RATE:-0}" -ge 1 ] && pass "http_server_request_duration_seconds_count series found" || fail "HTTP request metric series missing (AC-D4)"
 
+# Execute the same six-dimensional filters used by the provisioned Dashboard.
+# target_info alone is not sufficient proof because resource labels must exist
+# on the actual HTTP metric series for these expressions to work.
+RED_SELECTOR='site_id="dev-host",deployment_environment_name="acceptance",project_id="openscope-v01",service_namespace="openscope-demo",service_name="openscope-sample",service_instance_id=~".+"'
+RED_RATE_Q="sum(rate(http_server_request_duration_seconds_count{$RED_SELECTOR}[5m]))"
+RED_ERROR_Q="sum(rate(http_server_request_duration_seconds_count{$RED_SELECTOR,http_response_status_code=~\"5..\"}[5m]))"
+RED_P95_Q="histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{$RED_SELECTOR}[5m])) by (le))"
+for spec in "rate|$RED_RATE_Q" "error|$RED_ERROR_Q" "p95|$RED_P95_Q"; do
+  kind="${spec%%|*}"; query="${spec#*|}"; result_count=0
+  for _ in $(seq 1 12); do
+    result_count="$(pq "$query" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(len(d.get("data",{}).get("result",[])))' 2>/dev/null || echo 0)"
+    [ "${result_count:-0}" -ge 1 ] && break
+    sleep 5
+  done
+  [ "${result_count:-0}" -ge 1 ] && pass "Dashboard RED $kind query returns filtered data" || fail "Dashboard RED $kind query returned no filtered data"
+done
+
 section "Loki (logs)"
 L_LOGS="$(lq '{service_name="openscope-sample"}' | python3 -c '
 import sys,json
@@ -263,18 +349,86 @@ else
   fail "trace correlation skipped: no TID"
 fi
 
+section "Grafana provisioning and datasource health (AC-F1..F4)"
+for uid in openscope-prometheus openscope-tempo openscope-loki; do
+  DS_HEALTH=""
+  for _ in $(seq 1 12); do
+    DS_HEALTH="$(gcurl "/api/datasources/uid/$uid/health" 2>/dev/null || true)"
+    printf '%s' "$DS_HEALTH" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"(OK|ok|success)"' && break
+    sleep 5
+  done
+  printf '%s' "$DS_HEALTH" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"(OK|ok|success)"' \
+    && pass "datasource $uid health OK" \
+    || fail "datasource $uid health failed"
+done
+GRAFANA_DASHBOARD="$(gcurl '/api/dashboards/uid/openscope-overview' 2>/dev/null || true)"
+contains "$GRAFANA_DASHBOARD" 'openscope-overview' \
+  && pass "Grafana Dashboard openscope-overview provisioned" \
+  || fail "Grafana Dashboard openscope-overview missing"
+
 section "redaction (AC-E1..E3)"
-echo "  canary: $CANARY"
-RED_GREP() { # api response -> count occurrences of canary (0 = good)
-  local resp="$1"
-  printf '%s' "$resp" | grep -c "$CANARY" || true
-}
-L_RED="$(lq '{service_name="openscope-sample"}' || true)"
-[ "$(RED_GREP "$L_RED")" -eq 0 ] && pass "Loki: canary absent" || fail "Loki: canary LEAKED"
-P_RED="$(pq target_info || true)$(pq '{__name__=~"http_.*"}' || true)"
-[ "$(RED_GREP "$P_RED")" -eq 0 ] && pass "Prometheus: canary absent" || fail "Prometheus: canary LEAKED"
-T_RED="$(tq_search service.name%3Dopenscope-sample 50 || true)"
-[ "$(RED_GREP "$T_RED")" -eq 0 ] && pass "Tempo: canary absent" || fail "Tempo: canary LEAKED"
+echo "  synthetic canary fingerprint: $(printf '%s' "$CANARY" | python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest()[:12])')"
+
+# E1: application-side non-capture. Fetch full trace bodies, not only Tempo
+# search summaries, so captured headers or response bodies cannot hide.
+APP_TRACE_FULL=""
+for tid in $(printf '%s' "${T_JSON:-{}}" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(" ".join(t.get("traceID","") for t in d.get("traces",[])))' 2>/dev/null); do
+  [ -z "$tid" ] || APP_TRACE_FULL+="$(tq_trace "$tid" || true)"
+done
+APP_LOG_FULL="$(lq '{service_name="openscope-sample"}' || true)"
+APP_METRIC_FULL="$(pq 'target_info{job=~".*openscope-sample.*"}' || true)$(pq '{__name__=~"http_.*",job=~".*openscope-sample.*"}' || true)"
+E1_LEAK_SIGNALS=""
+contains "$APP_TRACE_FULL" "$CANARY" && E1_LEAK_SIGNALS="trace"
+contains "$APP_LOG_FULL" "$CANARY" && E1_LEAK_SIGNALS="${E1_LEAK_SIGNALS:+$E1_LEAK_SIGNALS,}log"
+contains "$APP_METRIC_FULL" "$CANARY" && E1_LEAK_SIGNALS="${E1_LEAK_SIGNALS:+$E1_LEAK_SIGNALS,}metric"
+if printf '%s' "$E1_LEAK_SIGNALS" | grep -q 'log'; then
+  printf '%s' "$APP_LOG_FULL" | CANARY="$CANARY" python3 -c '
+import json,os,sys
+c=os.environ["CANARY"]
+d=json.load(sys.stdin)
+found=set()
+for item in d.get("data",{}).get("result",[]):
+    for key,value in item.get("stream",{}).items():
+        if c in str(key): found.add("log.stream-key")
+        if c in str(value): found.add("log.stream."+str(key))
+    for pair in item.get("values",[]):
+        if len(pair)>1 and c in str(pair[1]): found.add("log.body")
+for location in sorted(found): print("  E1 sanitized locator: "+location)
+' 2>/dev/null || echo "  E1 sanitized locator unavailable"
+fi
+[ -z "$E1_LEAK_SIGNALS" ] \
+  && pass "E1 application path did not capture Authorization/Cookie/token/password/body canary" \
+  || fail "E1 application path leaked header/body canary in signal(s): $E1_LEAK_SIGNALS"
+
+# E2/E3: Collector-side deletion uses signal-specific positive controls. Each
+# control must be stored before absence of the sensitive value can pass.
+PROBE_T_SEARCH="{}"
+for _ in $(seq 1 12); do
+  PROBE_T_SEARCH="$(tq_search service.name%3Dopenscope-redaction-probe 20 || true)"
+  contains "$PROBE_T_SEARCH" "$PROBE_TRACE_ID" && break
+  sleep 5
+done
+PROBE_T_FULL="$(tq_trace "$PROBE_TRACE_ID" || true)"
+contains "$PROBE_T_FULL" "$CONTROL_ID" && pass "E2 trace control stored" || fail "E2 trace control missing"
+contains "$PROBE_T_FULL" "$COLLECTOR_CANARY" && fail "E2 trace sensitive attributes leaked" || pass "E2 trace sensitive attributes deleted"
+
+PROBE_P="{}"
+for _ in $(seq 1 12); do
+  PROBE_P="$(pq "openscope_redaction_probe{test_id=\"$CONTROL_ID\"}" || true)"
+  contains "$PROBE_P" "$CONTROL_ID" && break
+  sleep 5
+done
+contains "$PROBE_P" "$CONTROL_ID" && pass "E2 metric control stored" || fail "E2 metric control missing"
+contains "$PROBE_P" "$COLLECTOR_CANARY" && fail "E2 metric sensitive attributes leaked" || pass "E2 metric sensitive attributes deleted"
+
+PROBE_L="{}"
+for _ in $(seq 1 12); do
+  PROBE_L="$(lq '{service_name="openscope-redaction-probe"}' || true)"
+  contains "$PROBE_L" "$CONTROL_ID" && break
+  sleep 5
+done
+contains "$PROBE_L" "$CONTROL_ID" && pass "E2 log control stored" || fail "E2 log control missing"
+contains "$PROBE_L" "$COLLECTOR_CANARY" && fail "E2 log sensitive attributes leaked" || pass "E2 log sensitive attributes deleted"
 
 section "summary"
 echo "  checks=$CHECKS passed=$PASS failed=$FAIL"

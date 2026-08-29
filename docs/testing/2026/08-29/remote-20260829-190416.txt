@@ -1,0 +1,345 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+--workdir-filesystem--
+/dev/vdb        200G  6.6G  194G   4% /root
+--ports--
+ports free
+initial OpenScope running containers=0
+== payload sync (7d52e669bdbbdfb37e09bd29b8a9affe3a62603f) ==
+payload transferred
+payload manifest sha256=6bc2cddba72dab07e2743b18049af0d8855ebacd7fa4a274529c16718b97eb09
+payload git state=dirty (manifest identifies working-tree contents)
+payload-manifest-ok
+== isolated JDK 21.0.12+8 ==
+openjdk version "21.0.12" 2026-07-21 LTS
+OpenJDK Runtime Environment Temurin-21.0.12+8 (build 21.0.12+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.12+8 (build 21.0.12+8-LTS, mixed mode, sharing)
+javac 21.0.12
+isolated-jdk-sha-ok
+WARN agent jar not found locally at /Users/wuxi/workspace/base/openscope/dependencies/opentelemetry-javaagent.jar; attempting remote Maven Central download
+bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba  opentelemetry-javaagent.jar
+agent sha verification:
+agent-sha-ok
+  ok digest match pom.xml
+  ok digest match distribution/bom.yaml
+  ok digest match distribution/standalone/docker-compose.yml
+  ok digest match tools/verify-v0.1.sh
+  ok digest match cli/openscope
+  ok digest match examples/springboot-simple/src/main/java/dev/openscope/sample/ProbeController.java
+  ok digest match grafana/dashboards/overview/openscope-overview.json
+== env ==
+== remote static and build gates ==
+-- executable prune guard --
+-- bom check --
+OpenScope BOM resolver — /root/workspace/openscope-v0.1/distribution/bom.yaml
+  ok otelcol-contrib sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+  ok prometheus sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+  ok tempo sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+  ok loki sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+  ok grafana sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+  ok query-curl sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b
+  ok java-jdk sha256:e4446ff06a276155697597cc0f1b15da004ff083f4964a35271ecee567177370
+BOM digest check PASSED
+-- compose config --
+compose-config-ok
+-- verify-docs --
+[verify-docs] structure:
+  ok README.md
+  ok OpenScope-项目架构.md
+  ok OpenScope-技术架构.md
+  ok distribution/bom.yaml
+  ok distribution/standalone/docker-compose.yml
+  ok distribution/standalone/.env.example
+  ok distribution/standalone/config/collector/collector.yaml
+  ok distribution/standalone/config/prometheus/prometheus.yml
+  ok distribution/standalone/config/tempo/tempo.yaml
+  ok distribution/standalone/config/loki/loki.yaml
+  ok grafana/provisioning/datasources/prometheus.yml
+  ok grafana/provisioning/datasources/tempo.yml
+  ok grafana/provisioning/datasources/loki.yml
+  ok grafana/provisioning/dashboards/dashboards.yml
+  ok grafana/dashboards/overview/openscope-overview.json
+  ok cli/openscope
+  ok agents/java/manifest.yaml
+  ok tools/resolve-bom.sh
+[verify-docs] placeholder & forbidden literal scan:
+  ok no 'latest' image references in distribution configs
+  ok no default admin password in tracked config
+  ok example password only in .env.example
+[verify-docs] plan and acceptance state consistency:
+  ok acceptance checklist is not claiming accepted closure
+[verify-docs] PASSED
+-- mvnw runtime --
+Apache Maven 3.9.12 (848fbb4bf2d427b72bdb2471c22fced7ebd9a7a1)
+Maven home: /root/.m2/wrapper/dists/apache-maven-3.9.12/6068d197
+Java version: 21.0.12, vendor: Eclipse Adoptium, runtime: /root/workspace/openscope-v0.1/dependencies/jdk-21.0.12+8
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "5.14.0-419.el9.x86_64", arch: "amd64", family: "unix"
+-- mvnw clean verify --
+remote static/build exit=0
+non-openscope container snapshot (before):
+035a4475ac2c76c32adc11d198ed238015249e5b8cee611a8a7f8be1a9a74360 /data-os-dev-quality-runner-1 running true 0 medical-platform/data-os-quality-runner:0.1.0-hospital-edge-g5-20260820
+0ae7492b665415d86a3ba4ab13c873372ad3898d203252b31fcd7c39320bc362 /medical-platform-keycloak-1 running true 0 quay.io/keycloak/keycloak:26.0
+0d035843bb517a761b232f6d9bd10e2e032ed44bdf4944c2f75b47660801fbc1 /forgeops-gateway-1 running true 0 forgeops-gateway:dev
+138de8592b4020354c823b252072d635df938146230af67d042923e4357ec52c /trusting_dirac running true 0 ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0
+26e91847321cd585705e234efaeab05ab67cabba3c6fee911603dea7ee8ed7a3 /multica-frontend-1 running true 0 multica-web:dev
+33627c8fea4d3131b2a8f39ce96586f2fc2cfd9de5c3570e177047977fc0cbef /multica-backend-1 running true 0 multica-backend:dev
+3635879474e22bf8a15571740eaa020d128dbf1273ff062a50139ccddabb3dd2 /data-os-dev-dolphinscheduler-alert-1 running true 0 apache/dolphinscheduler-alert-server:3.4.1
+382cc12e1e4c589ea4b912f6e5e93e0a4579f073f54cbda7b7d09f87d7e146a4 /medical-platform-keycloak-db-1 running true 0 postgres:16
+398fe653e2c097f3e8f7b7057f59384d0f72c371d423c49885db8c0599f90462 /data-os-dev-portal-1 running true 0 nginx:1.27
+568c800e5201b6b0233eeb1127ce46b9fd1f4bb991e4be3a11f6458922c7afc7 /data-os-dev-dolphinscheduler-api-1 running true 0 apache/dolphinscheduler-api:3.4.1
+56b27c72a6795096f2ca6cf5ec33c1c135d9d1524e713baa14033509c46ed791 /data-os-dev-dolphinscheduler-worker-1 running true 0 apache/dolphinscheduler-worker:3.4.1
+5d18386d2a75c90867e974cc8ed9f3687d30278749566dc3e69b25e0b9940837 /data-os-dev-dolphinscheduler-postgresql-1 running true 0 postgres:16-alpine
+6124916d73b3a59cb1ad8022ffc9c0e8a20428b64dd6d57644e23693d48e7fac /medical-platform-superset-1 running true 0 medical-platform/superset:4.1
+613504ea1a8c97e00977403d64d30bd8c52ed07018babf0fb8cd57040d5b6e1d /data-os-dev-rustfs-1 running true 0 rustfs/rustfs@sha256:41fe89380f4120a337790c02af192c3fe7bb55c3edc2e6e9357b487b47c6ab21
+6a98a5f8843d9e1ace7da07bead9fa60abd73c6ec8320e3796b8c2256cf63222 /medical-platform-nifi-1 running true 0 medical-platform/nifi:2.10.0
+6e8a365c219cf972e9ae1b65daa8c2dc4a250edaad4ba04e7adafa7f46ea0b47 /data-os-dev-seatunnel-master-1 running true 0 medical-platform/data-os-seatunnel:2.3.13-dataos.4
+76363f5f33ed8217a6acf89feb9017d157b40d61dc97312ff05ef6c14dc0a9aa /data-os-dev-dolphinscheduler-master-1 running true 0 apache/dolphinscheduler-master:3.4.1
+77a3a52417ab71106f7f3373bdf080cc5c8b4c485a3c7ddcd0af20d2ad497faa /medical-platform-openmetadata-1 running true 0 openmetadata/server:1.5.11
+84937742facdf15c23a166304b9eef2fca0708c40af2d94987591fbcda6a545d /nervous_ishizaka running true 0 medical-platform/data-os-scheduler-token-rotator:0.1.0-dev
+84ba69f09d411f7833fa1d44a95f91456ac14328aeb632e40d921c8ef1949677 /data-os-dev-scheduler-token-rotator-1 running true 0 medical-platform/data-os-scheduler-token-rotator:0.1.0-dev
+95f5f1f77a65f60aea86599a17292233122dcf461671c14ee7866426d75ea7e3 /data-os-dev-data-api-1 running true 0 medical-platform/data-os-data-api:0.1.0-dev
+9cf644d8fb621b4bef705d17f94183546127b7006d5583ab78fdb57be2b718d1 /medical-platform-elasticsearch-1 running true 0 elasticsearch:8.10.2
+b30b1032b6e767a78975d2a3b88641d5c5d61fa2b9896fac3ad21395a38d9541 /hapi-mdm-spike running true 0 eclipse-temurin:21-jre-alpine
+c630e68482f0fb917b64396cdbd9db88080d201fe19c4d0860d952c6ce0bbdcb /medical-platform-mysql-1 running true 0 mysql:8.0
+ca9b72a0d0c2ea1a2a3a0d83b513ea871da46916139d8fdebe05183e04c0b493 /jpom-server running true 0 jpomdocker/jpom
+d0944ef24e1d2b42e6318e21fde38c992b472cfdcd9ac2eebe5dfe9bc1284843 /minifi-edge running true 0 apache/nifi-minifi:2.10.0
+d4549553f8388e458700ab1ed232c1c577394d4983779ee070410ebab15afbd8 /magicops-console running true 0 magicops/console:0.1.0-dev
+d5d21f9010198667ee633e6078422c78d72207cf279b99d55a284f790a53a1cd /dbgpt running true 0 medical-platform/dbgpt:0.8-oidc
+e1f20ec19b5665cbdd45cf7f9cdf863b1ebc89de258f7eb00eb99dc63920dd6d /data-os-dev-mpi-service-1 running true 0 medical-platform/data-os-mpi-service:0.1.0-dev
+e3f54a9fac2198c210c429d0a241f9b89ad75336290458e7ba8c8555a572e327 /data-os-dev-ai-ready-service-1 running true 0 medical-platform/data-os-ai-ready-service:0.1.0-dev
+e5cf57f6fc8123dac8f01b0c14601a8efb6abd8a03ee0d6b6deb3b0dd8df249b /data-os-dev-control-plane-1 running true 0 medical-platform/data-os-control-plane:0.1.0-tob-data-api-g13
+e7a2721785087a185f178c6259addcb81921809ca77702782fac9f33b37e57ce /data-os-dev-notification-receiver-1 running true 0 medical-platform/data-os-notification-receiver:0.1.0-dev
+facc3098edb1512c0d433260deed99e036e6e3ef05d48eb8f609b25977c5905b /medical-platform-gateway-1 running true 0 nginx:1.27
+fe44b41e69dd3e0a9c6ad5dc9c5ba4cacdbda11cbee53c77fd3d2625899fe27c /multica-postgres-1 running true 0 pgvector/pgvector:pg17
+== remote runtime execution ==
+-- cli start --
+ Container openscope-v01-grafana Recreate
+ Container openscope-v01-grafana Recreated
+ Container openscope-v01-prometheus Starting
+ Container openscope-v01-loki Starting
+ Container openscope-v01-collector Starting
+ Container openscope-v01-grafana Starting
+ Container openscope-v01-tempo Starting
+ Container openscope-v01-grafana Started
+ Container openscope-v01-collector Started
+ Container openscope-v01-loki Started
+ Container openscope-v01-tempo Started
+ Container openscope-v01-prometheus Started
+[1;32m[openscope][0m stack started: collector prometheus tempo loki grafana
+-- force recreate from current config, preserving volumes --
+ Container openscope-v01-collector Recreate
+ Container openscope-v01-prometheus Recreate
+ Container openscope-v01-grafana Recreate
+ Container openscope-v01-tempo Recreate
+ Container openscope-v01-loki Recreate
+ Container openscope-v01-collector Recreated
+ Container openscope-v01-prometheus Recreated
+ Container openscope-v01-grafana Recreated
+ Container openscope-v01-tempo Recreated
+ Container openscope-v01-loki Recreated
+ Container openscope-v01-loki Starting
+ Container openscope-v01-grafana Starting
+ Container openscope-v01-collector Starting
+ Container openscope-v01-prometheus Starting
+ Container openscope-v01-tempo Starting
+ Container openscope-v01-grafana Started
+ Container openscope-v01-loki Started
+ Container openscope-v01-prometheus Started
+ Container openscope-v01-collector Started
+ Container openscope-v01-tempo Started
+-- synchronize persisted Grafana admin password --
+logger=settings t=2026-08-29T11:05:05.963110284Z level=info msg="Starting Grafana" version=13.2.0 commit=f681b1359f6a0b8ecb9f2c49a88ac72b75bde73b branch=release-13.2.0#patched compiled=2026-08-17T22:44:20Z
+logger=settings t=2026-08-29T11:05:05.964428713Z level=info msg="Unified migration configs enforced" storage_type=unified target=[all]
+logger=settings t=2026-08-29T11:05:05.964485661Z level=info msg="Enforcing mode 5 for resource in unified storage" resource=playlists.playlist.grafana.app
+logger=settings t=2026-08-29T11:05:05.964502601Z level=info msg="Enforcing mode 5 for resource in unified storage" resource=dashboards.dashboard.grafana.app
+logger=settings t=2026-08-29T11:05:05.964518766Z level=info msg="Enforcing mode 5 for resource in unified storage" resource=folders.folder.grafana.app
+logger=settings t=2026-08-29T11:05:05.964532187Z level=info msg="Enforcing mode 5 for resource in unified storage" resource=shorturls.shorturl.grafana.app
+logger=settings t=2026-08-29T11:05:05.964820567Z level=info msg="Config loaded from" file=/usr/share/grafana/conf/defaults.ini
+logger=settings t=2026-08-29T11:05:05.964858493Z level=info msg="Config loaded from" file=/etc/grafana/grafana.ini
+logger=settings t=2026-08-29T11:05:05.964869077Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_DATA=/var/lib/grafana"
+logger=settings t=2026-08-29T11:05:05.964878634Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_LOGS=/var/log/grafana"
+logger=settings t=2026-08-29T11:05:05.964887395Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_PLUGINS=/var/lib/grafana/plugins"
+logger=settings t=2026-08-29T11:05:05.964896358Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_PROVISIONING=/etc/grafana/provisioning"
+logger=settings t=2026-08-29T11:05:05.964905608Z level=info msg="Config overridden from Environment variable" var="GF_SECURITY_ADMIN_USER=admin"
+logger=settings t=2026-08-29T11:05:05.964914626Z level=info msg="Config overridden from Environment variable" var="GF_SECURITY_ADMIN_PASSWORD=*********"
+logger=settings t=2026-08-29T11:05:05.964923704Z level=info msg="Config overridden from Environment variable" var="GF_USERS_ALLOW_SIGN_UP=false"
+logger=settings t=2026-08-29T11:05:05.964932521Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_HOME=/usr/share/grafana"
+logger=settings t=2026-08-29T11:05:05.964942227Z level=info msg="Config overridden from Environment variable" var="GF_PATHS_CONFIG=/etc/grafana/grafana.ini"
+logger=settings t=2026-08-29T11:05:05.964951764Z level=info msg=Target target=[all]
+logger=settings t=2026-08-29T11:05:05.964978073Z level=info msg="Path Home" path=/usr/share/grafana
+logger=settings t=2026-08-29T11:05:05.964987017Z level=info msg="Path Data" path=/var/lib/grafana
+logger=settings t=2026-08-29T11:05:05.964995476Z level=info msg="Path Logs" path=/var/log/grafana
+logger=settings t=2026-08-29T11:05:05.965003736Z level=info msg="Path Plugins" path="[/var/lib/grafana/plugins /usr/share/grafana/data/plugins-bundled]"
+logger=settings t=2026-08-29T11:05:05.965014741Z level=info msg="Path Provisioning" path=/etc/grafana/provisioning
+logger=settings t=2026-08-29T11:05:05.965023619Z level=info msg="App mode production"
+logger=featuremgmt t=2026-08-29T11:05:05.965738593Z level=info msg=FeatureToggles alertRuleRestore=true alertingBulkActionsInUI=true alertingImportYAMLUI=true alertingListViewV2=true alertingMigrationUI=true alertingNavigationV2=true alertingNotificationsStepMode=true alertingQueryAndExpressionsStepMode=true alertingRulePermanentlyDelete=true alertingRuleRecoverDeleted=true alertingRuleVersionHistoryRestore=true alertingUIOptimizeReducer=true alertingUIUseBackendFilters=true alertingUIUseFullyCompatBackendFilters=true alertingUseNewSimplifiedRoutingHashAlgorithm=true annotationPermissionUpdate=true auditLoggingAppPlatform=true awsAsyncQueryCaching=true awsDatasourcesTempCredentials=true azureMonitorEnableUserAuth=true azureMonitorPrometheusExemplars=true azureResourcePickerUpdates=true cloudWatchCrossAccountQuerying=true cloudWatchNewLabelParsing=true cloudWatchRoundUpEndTime=true dashboardNewLayouts=true dashboardUnifiedDrilldownControls=true disableScriptedDashboards=true enableSCIM=true feedbackButton=true grafana.dashboardSettingsRedesign=true grafana.newPreferencesPage=true grafana.queryVarEditorRedesign=true grafana.scenesFlickeringFix=true grafana.unifiedDataSourcePicker=true grafana.viewPanelPane=true grafanaAssistantInProfilesDrilldown=true improvedExternalSessionHandling=true improvedExternalSessionHandlingSAML=true lokiLabelNamesQueryApi=true lokiQuerySplitting=true newClickhouseConfigPageDesign=true newSavedQueriesExperience=true onlyStoreActionSets=true preferences.rerouteLegacyAPIs=true profilesExemplars=true prometheusAzureOverrideAudience=true prometheusTypeMigration=true provisioning.gitConventions=true provisioning.readmes=true provisioning.userAttribution=true provisioningFolderMetadata=true pyroscopeUTF8LabelNames=true queryLibrary=true react19=true rememberUserOrgForSso=true renderAuthJWT=true restrictedPluginApis=true savedQueriesRBAC=true sqlExpressions=true useKubernetesShortURLsAPI=true useSessionStorageForRedirection=true
+logger=sqlstore t=2026-08-29T11:05:05.96597188Z level=info msg="Connecting to DB" dbtype=sqlite3
+logger=sqlstore t=2026-08-29T11:05:05.965988719Z level=info msg="Using SQLite driver" driver=modernc.org/sqlite
+logger=migrator t=2026-08-29T11:05:05.967233653Z level=info msg="Starting DB migrations"
+logger=migrator t=2026-08-29T11:05:05.981593435Z level=info msg="migrations completed" performed=0 skipped=719 duration=1.682166ms
+logger=secrets t=2026-08-29T11:05:05.982365861Z level=info msg="Envelope encryption state" currentprovider=secretKey.v1
+logger=accesscontrol.service t=2026-08-29T11:05:05.982726374Z level=info msg="Starting migration to remove deprecated permissions" migration=removeDeprecatedPermissions
+logger=accesscontrol.service t=2026-08-29T11:05:05.983298816Z level=info msg="Completed migration to remove deprecated permissions" migration=removeDeprecatedPermissions totalRemoved=0 duration=573.151µs
+logger=secret-migrator t=2026-08-29T11:05:05.983459644Z level=info msg="Starting DB migrations"
+logger=secret-migrator t=2026-08-29T11:05:05.98434468Z level=info msg="migrations completed" performed=0 skipped=35 duration=71.234µs
+
+Admin password changed successfully ✔
+
+
+
+-- cli status --
+NAME                       IMAGE                                                                                                                                                                     COMMAND                  SERVICE      CREATED          STATUS         PORTS
+openscope-v01-collector    ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc   "/otelcol-contrib --…"   collector    21 seconds ago   Up 9 seconds   127.0.0.1:4317-4318->4317-4318/tcp, 55679/tcp
+openscope-v01-grafana      grafana/grafana:13.2.0@sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b                                                                            "/run.sh"                grafana      21 seconds ago   Up 9 seconds   127.0.0.1:13001->3000/tcp
+openscope-v01-loki         grafana/loki:3.7.6@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952                                                                                "/usr/bin/loki -conf…"   loki         21 seconds ago   Up 9 seconds   3100/tcp
+openscope-v01-prometheus   prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0                                                                           "/bin/prometheus --c…"   prometheus   21 seconds ago   Up 9 seconds   9090/tcp
+openscope-v01-tempo        grafana/tempo:3.0.3@sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5                                                                               "/tempo -config.file…"   tempo        21 seconds ago   Up 9 seconds
+---
+NAMES                      STATUS
+openscope-v01-grafana      Up 9 seconds
+openscope-v01-loki         Up 9 seconds
+openscope-v01-tempo        Up 9 seconds
+openscope-v01-prometheus   Up 9 seconds
+openscope-v01-collector    Up 9 seconds
+-- cli doctor --
+[doctor] component health:
+  OK   collector container running
+  OK   prometheus container running
+  OK   tempo container running
+  OK   loki container running
+  OK   grafana container running
+[doctor] backend readiness:
+  OK   collector API ready
+  OK   prometheus API ready
+  OK   tempo API ready
+  OK   loki API ready
+[doctor] OTLP listeners:
+  OK   OTLP/HTTP 127.0.0.1:4318 reachable
+  OK   OTLP/gRPC 127.0.0.1:4317 reachable
+[doctor] Grafana and provisioned assets:
+  OK   grafana authenticated API ready
+  OK   datasource openscope-prometheus health
+  OK   datasource openscope-tempo health
+  OK   datasource openscope-loki health
+  OK   dashboard openscope-overview provisioned
+[doctor] permissions, storage and BOM:
+  OK   .env permissions 600
+  OK   runtime data directory writable
+  OK   prometheus data volume writable
+  OK   tempo data volume writable
+  OK   loki data volume writable
+  OK   grafana data volume writable
+  OK   collector image matches BOM
+  OK   prometheus image matches BOM
+  OK   tempo image matches BOM
+  OK   loki image matches BOM
+  OK   grafana image matches BOM
+  OK   workspace disk available=193GiB usage=4%
+[doctor] ALL OK
+-- verify-v0.1 run 1 --
+
+=== preflight ===
+  ok stack running
+
+=== sample app (Java Agent present) ===
+  ok app up (pid 4102665)
+  PASS sample started under Java Agent yes
+
+=== traffic generation ===
+ok:200 fail:500 sensitive:200
+
+=== Tempo (traces) ===
+  PASS traces found in Tempo (n=5)
+  PASS fetched traceID=48c3a11ee90503dc88c93cf047f2dd91
+  PASS trace resource attr site.id
+  PASS trace resource attr project.id
+  PASS trace resource attr deployment.environment.name
+  PASS trace resource attr service.namespace
+  PASS trace resource attr service.name
+  PASS trace resource attr service.instance.id
+  PASS trace resource attr service.version
+  PASS failure span evidence present (500/ERROR across traces)
+
+=== Prometheus (metrics) ===
+  PASS target_info present for openscope-sample
+  PASS prom label site_id
+  PASS prom label project_id
+  PASS prom label deployment_environment_name
+  PASS prom label service_version
+  PASS prom label job
+  PASS prom label instance
+  PASS job carries service identity openscope-sample
+  PASS http_server_request_duration_seconds_count series found
+  PASS Dashboard RED rate query returns filtered data
+  PASS Dashboard RED error query returns filtered data
+  PASS Dashboard RED p95 query returns filtered data
+
+=== Loki (logs) ===
+  PASS log lines found in Loki (n=32)
+  PASS log trace_id matches Tempo traceID (AC-D7/AC-08, trace=48c3a11ee90503dc88c93cf047f2dd91 streams=1)
+
+=== Grafana provisioning and datasource health (AC-F1..F4) ===
+  PASS datasource openscope-prometheus health OK
+  PASS datasource openscope-tempo health OK
+  PASS datasource openscope-loki health OK
+  PASS Grafana Dashboard openscope-overview provisioned
+
+=== redaction (AC-E1..E3) ===
+  synthetic canary fingerprint: 79864fde257a
+  FAIL E1 application path leaked header/body canary
+  PASS E2 trace control stored
+  PASS E2 trace sensitive attributes deleted
+  PASS E2 metric control stored
+  PASS E2 metric sensitive attributes deleted
+  PASS E2 log control stored
+  PASS E2 log sensitive attributes deleted
+
+=== summary ===
+  checks=36 passed=35 failed=1
+VERIFY-V0.1 FAILED (1 failed)
+remote execution exit=1
+== evidence & cleanup ==
+[1;32m[openscope][0m stack stopped (volumes preserved — AC-G4)
+OpenScope restored to initial stopped state
+non-openscope container snapshot (after):
+035a4475ac2c76c32adc11d198ed238015249e5b8cee611a8a7f8be1a9a74360 /data-os-dev-quality-runner-1 running true 0 medical-platform/data-os-quality-runner:0.1.0-hospital-edge-g5-20260820
+0ae7492b665415d86a3ba4ab13c873372ad3898d203252b31fcd7c39320bc362 /medical-platform-keycloak-1 running true 0 quay.io/keycloak/keycloak:26.0
+0d035843bb517a761b232f6d9bd10e2e032ed44bdf4944c2f75b47660801fbc1 /forgeops-gateway-1 running true 0 forgeops-gateway:dev
+138de8592b4020354c823b252072d635df938146230af67d042923e4357ec52c /trusting_dirac running true 0 ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0
+26e91847321cd585705e234efaeab05ab67cabba3c6fee911603dea7ee8ed7a3 /multica-frontend-1 running true 0 multica-web:dev
+33627c8fea4d3131b2a8f39ce96586f2fc2cfd9de5c3570e177047977fc0cbef /multica-backend-1 running true 0 multica-backend:dev
+3635879474e22bf8a15571740eaa020d128dbf1273ff062a50139ccddabb3dd2 /data-os-dev-dolphinscheduler-alert-1 running true 0 apache/dolphinscheduler-alert-server:3.4.1
+382cc12e1e4c589ea4b912f6e5e93e0a4579f073f54cbda7b7d09f87d7e146a4 /medical-platform-keycloak-db-1 running true 0 postgres:16
+398fe653e2c097f3e8f7b7057f59384d0f72c371d423c49885db8c0599f90462 /data-os-dev-portal-1 running true 0 nginx:1.27
+568c800e5201b6b0233eeb1127ce46b9fd1f4bb991e4be3a11f6458922c7afc7 /data-os-dev-dolphinscheduler-api-1 running true 0 apache/dolphinscheduler-api:3.4.1
+56b27c72a6795096f2ca6cf5ec33c1c135d9d1524e713baa14033509c46ed791 /data-os-dev-dolphinscheduler-worker-1 running true 0 apache/dolphinscheduler-worker:3.4.1
+5d18386d2a75c90867e974cc8ed9f3687d30278749566dc3e69b25e0b9940837 /data-os-dev-dolphinscheduler-postgresql-1 running true 0 postgres:16-alpine
+6124916d73b3a59cb1ad8022ffc9c0e8a20428b64dd6d57644e23693d48e7fac /medical-platform-superset-1 running true 0 medical-platform/superset:4.1
+613504ea1a8c97e00977403d64d30bd8c52ed07018babf0fb8cd57040d5b6e1d /data-os-dev-rustfs-1 running true 0 rustfs/rustfs@sha256:41fe89380f4120a337790c02af192c3fe7bb55c3edc2e6e9357b487b47c6ab21
+6a98a5f8843d9e1ace7da07bead9fa60abd73c6ec8320e3796b8c2256cf63222 /medical-platform-nifi-1 running true 0 medical-platform/nifi:2.10.0
+6e8a365c219cf972e9ae1b65daa8c2dc4a250edaad4ba04e7adafa7f46ea0b47 /data-os-dev-seatunnel-master-1 running true 0 medical-platform/data-os-seatunnel:2.3.13-dataos.4
+76363f5f33ed8217a6acf89feb9017d157b40d61dc97312ff05ef6c14dc0a9aa /data-os-dev-dolphinscheduler-master-1 running true 0 apache/dolphinscheduler-master:3.4.1
+77a3a52417ab71106f7f3373bdf080cc5c8b4c485a3c7ddcd0af20d2ad497faa /medical-platform-openmetadata-1 running true 0 openmetadata/server:1.5.11
+84937742facdf15c23a166304b9eef2fca0708c40af2d94987591fbcda6a545d /nervous_ishizaka running true 0 medical-platform/data-os-scheduler-token-rotator:0.1.0-dev
+84ba69f09d411f7833fa1d44a95f91456ac14328aeb632e40d921c8ef1949677 /data-os-dev-scheduler-token-rotator-1 running true 0 medical-platform/data-os-scheduler-token-rotator:0.1.0-dev
+95f5f1f77a65f60aea86599a17292233122dcf461671c14ee7866426d75ea7e3 /data-os-dev-data-api-1 running true 0 medical-platform/data-os-data-api:0.1.0-dev
+9cf644d8fb621b4bef705d17f94183546127b7006d5583ab78fdb57be2b718d1 /medical-platform-elasticsearch-1 running true 0 elasticsearch:8.10.2
+b30b1032b6e767a78975d2a3b88641d5c5d61fa2b9896fac3ad21395a38d9541 /hapi-mdm-spike running true 0 eclipse-temurin:21-jre-alpine
+c630e68482f0fb917b64396cdbd9db88080d201fe19c4d0860d952c6ce0bbdcb /medical-platform-mysql-1 running true 0 mysql:8.0
+ca9b72a0d0c2ea1a2a3a0d83b513ea871da46916139d8fdebe05183e04c0b493 /jpom-server running true 0 jpomdocker/jpom
+d0944ef24e1d2b42e6318e21fde38c992b472cfdcd9ac2eebe5dfe9bc1284843 /minifi-edge running true 0 apache/nifi-minifi:2.10.0
+d4549553f8388e458700ab1ed232c1c577394d4983779ee070410ebab15afbd8 /magicops-console running true 0 magicops/console:0.1.0-dev
+d5d21f9010198667ee633e6078422c78d72207cf279b99d55a284f790a53a1cd /dbgpt running true 0 medical-platform/dbgpt:0.8-oidc
+e1f20ec19b5665cbdd45cf7f9cdf863b1ebc89de258f7eb00eb99dc63920dd6d /data-os-dev-mpi-service-1 running true 0 medical-platform/data-os-mpi-service:0.1.0-dev
+e3f54a9fac2198c210c429d0a241f9b89ad75336290458e7ba8c8555a572e327 /data-os-dev-ai-ready-service-1 running true 0 medical-platform/data-os-ai-ready-service:0.1.0-dev
+e5cf57f6fc8123dac8f01b0c14601a8efb6abd8a03ee0d6b6deb3b0dd8df249b /data-os-dev-control-plane-1 running true 0 medical-platform/data-os-control-plane:0.1.0-tob-data-api-g13
+e7a2721785087a185f178c6259addcb81921809ca77702782fac9f33b37e57ce /data-os-dev-notification-receiver-1 running true 0 medical-platform/data-os-notification-receiver:0.1.0-dev
+facc3098edb1512c0d433260deed99e036e6e3ef05d48eb8f609b25977c5905b /medical-platform-gateway-1 running true 0 nginx:1.27
+fe44b41e69dd3e0a9c6ad5dc9c5ba4cacdbda11cbee53c77fd3d2625899fe27c /multica-postgres-1 running true 0 pgvector/pgvector:pg17
+non-openscope snapshot unchanged
+remote runner finished rc=1

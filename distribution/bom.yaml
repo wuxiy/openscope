@@ -48,6 +48,13 @@ images:
     source: docker.io (resolved via remote daemon mirror path)
     resolved_at: "2026-08-28"
     notes: provisioning-only configuration
+  query-curl:
+    repo: curlimages/curl
+    tag: 8.10.1
+    digest: sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b
+    source: docker.io (resolved from the validation host daemon RepoDigest)
+    resolved_at: "2026-08-29"
+    notes: validation-only query helper; never part of the managed runtime topology
 
 agents:
   java-agent:
@@ -56,3 +63,16 @@ agents:
     sha256: bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba
     source: Maven Central
     verified_at: "2026-08-28"
+
+build_dependencies:
+  java-jdk:
+    distribution: Eclipse Temurin
+    version: 21.0.12+8
+    platform: linux-x64
+    directory: jdk-21.0.12+8
+    archive: OpenJDK21U-jdk_x64_linux_hotspot_21.0.12_8.tar.gz
+    sha256: e4446ff06a276155697597cc0f1b15da004ff083f4964a35271ecee567177370
+    source: https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12_8.tar.gz
+    mirror: https://mirror.nju.edu.cn/eclipse/temurin-compliance/temurin/21/jdk-21.0.12%2B8/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12_8.tar.gz
+    verified_at: "2026-08-29"
+    notes: validation-only isolated JDK; mirror is transport-only and the official-release SHA-256 remains authoritative; extracted under the owned remote dependencies directory and never installed system-wide

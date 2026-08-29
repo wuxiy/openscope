@@ -17,6 +17,10 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
 processors:
   memory_limiter:
     check_interval: 1s
@@ -35,6 +39,20 @@ processors:
         action: delete
       - key: http.request.header.token
         action: delete
+      - key: http.request.header.x-token
+        action: delete
+      - key: http.request.header.x-password
+        action: delete
+      - key: http.request.body
+        action: delete
+      - key: http.response.body
+        action: delete
+      - key: token
+        action: delete
+      - key: password
+        action: delete
+      - key: body
+        action: delete
       - key: http.client.header.authorization
         action: delete
       - key: http.client.header.cookie
@@ -49,6 +67,22 @@ processors:
         action: delete
       - key: http.request.header.cookie
         action: delete
+      - key: http.request.header.token
+        action: delete
+      - key: http.request.header.x-token
+        action: delete
+      - key: http.request.header.x-password
+        action: delete
+      - key: http.request.body
+        action: delete
+      - key: http.response.body
+        action: delete
+      - key: token
+        action: delete
+      - key: password
+        action: delete
+      - key: body
+        action: delete
   attributes/logs-redact:
     actions:
       - key: http.request.header.authorization
@@ -56,6 +90,18 @@ processors:
       - key: http.request.header.cookie
         action: delete
       - key: http.request.header.token
+        action: delete
+      - key: http.request.header.x-token
+        action: delete
+      - key: http.request.header.x-password
+        action: delete
+      - key: http.request.body
+        action: delete
+      - key: http.response.body
+        action: delete
+      - key: token
+        action: delete
+      - key: password
         action: delete
       - key: body
         action: delete
@@ -74,6 +120,7 @@ exporters:
     endpoint: http://loki:3100/otlp
 
 service:
+  extensions: [health_check]
   telemetry:
     metrics:
       level: normal

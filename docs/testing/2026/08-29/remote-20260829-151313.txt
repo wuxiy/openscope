@@ -1,0 +1,11 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+/dev/mapper/cs-root   79G   70G  9.9G  88% /
+--ports--
+ports free
+BLOCKED disk guard available=9GiB usage=88%
+REMOTE ACCEPTANCE BLOCKED before payload sync or container operations

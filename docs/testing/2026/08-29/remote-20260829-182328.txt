@@ -1,0 +1,318 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+--workdir-filesystem--
+/dev/vdb        200G  6.5G  194G   4% /root
+--ports--
+ports free
+initial OpenScope running containers=0
+== payload sync (7d52e669bdbbdfb37e09bd29b8a9affe3a62603f) ==
+payload transferred
+payload manifest sha256=6532156fed4c6fd76e643da1b6cb0bd36ee166a32f776d020301f1e86ad4b73b
+payload git state=dirty (manifest identifies working-tree contents)
+payload-manifest-ok
+== isolated JDK 21.0.12+8 ==
+openjdk version "21.0.12" 2026-07-21 LTS
+OpenJDK Runtime Environment Temurin-21.0.12+8 (build 21.0.12+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.12+8 (build 21.0.12+8-LTS, mixed mode, sharing)
+javac 21.0.12
+isolated-jdk-sha-ok
+WARN agent jar not found locally at /Users/wuxi/workspace/base/openscope/dependencies/opentelemetry-javaagent.jar; attempting remote Maven Central download
+bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba  opentelemetry-javaagent.jar
+agent sha verification:
+agent-sha-ok
+  ok digest match pom.xml
+  ok digest match distribution/bom.yaml
+  ok digest match distribution/standalone/docker-compose.yml
+  ok digest match tools/verify-v0.1.sh
+  ok digest match cli/openscope
+  ok digest match examples/springboot-simple/src/main/java/dev/openscope/sample/ProbeController.java
+  ok digest match grafana/dashboards/overview/openscope-overview.json
+== env ==
+== remote static and build gates ==
+-- executable prune guard --
+-- bom check --
+OpenScope BOM resolver — /root/workspace/openscope-v0.1/distribution/bom.yaml
+  ok otelcol-contrib sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+  ok prometheus sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+  ok tempo sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+  ok loki sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+  ok grafana sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+  ok query-curl sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b
+  ok java-jdk sha256:e4446ff06a276155697597cc0f1b15da004ff083f4964a35271ecee567177370
+BOM digest check PASSED
+-- compose config --
+compose-config-ok
+-- verify-docs --
+[verify-docs] structure:
+  ok README.md
+  ok OpenScope-项目架构.md
+  ok OpenScope-技术架构.md
+  ok distribution/bom.yaml
+  ok distribution/standalone/docker-compose.yml
+  ok distribution/standalone/.env.example
+  ok distribution/standalone/config/collector/collector.yaml
+  ok distribution/standalone/config/prometheus/prometheus.yml
+  ok distribution/standalone/config/tempo/tempo.yaml
+  ok distribution/standalone/config/loki/loki.yaml
+  ok grafana/provisioning/datasources/prometheus.yml
+  ok grafana/provisioning/datasources/tempo.yml
+  ok grafana/provisioning/datasources/loki.yml
+  ok grafana/provisioning/dashboards/dashboards.yml
+  ok grafana/dashboards/overview/openscope-overview.json
+  ok cli/openscope
+  ok agents/java/manifest.yaml
+  ok tools/resolve-bom.sh
+[verify-docs] placeholder & forbidden literal scan:
+  ok no 'latest' image references in distribution configs
+  ok no default admin password in tracked config
+  ok example password only in .env.example
+[verify-docs] plan and acceptance state consistency:
+  ok acceptance checklist is not claiming accepted closure
+[verify-docs] PASSED
+-- mvnw runtime --
+Apache Maven 3.9.12 (848fbb4bf2d427b72bdb2471c22fced7ebd9a7a1)
+Maven home: /root/.m2/wrapper/dists/apache-maven-3.9.12/6068d197
+Java version: 21.0.12, vendor: Eclipse Adoptium, runtime: /root/workspace/openscope-v0.1/dependencies/jdk-21.0.12+8
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "5.14.0-419.el9.x86_64", arch: "amd64", family: "unix"
+-- mvnw clean verify --
+remote static/build exit=0
+non-openscope container snapshot (before):
+035a4475ac2c data-os-dev-quality-runner-1 Up 8 days (healthy)
+0ae7492b6654 medical-platform-keycloak-1 Up 4 weeks
+0d035843bb51 forgeops-gateway-1 Up 10 days
+138de8592b40 trusting_dirac Up 31 hours
+26e91847321c multica-frontend-1 Up 2 weeks
+33627c8fea4d multica-backend-1 Up 10 days
+3635879474e2 data-os-dev-dolphinscheduler-alert-1 Up 3 weeks (healthy)
+382cc12e1e4c medical-platform-keycloak-db-1 Up 4 weeks (healthy)
+398fe653e2c0 data-os-dev-portal-1 Up 47 hours
+568c800e5201 data-os-dev-dolphinscheduler-api-1 Up 3 weeks (healthy)
+56b27c72a679 data-os-dev-dolphinscheduler-worker-1 Up 3 weeks (healthy)
+5d18386d2a75 data-os-dev-dolphinscheduler-postgresql-1 Up 3 weeks (healthy)
+6124916d73b3 medical-platform-superset-1 Up 9 days (healthy)
+613504ea1a8c data-os-dev-rustfs-1 Up 2 weeks (healthy)
+6a98a5f8843d medical-platform-nifi-1 Up 4 weeks
+6e8a365c219c data-os-dev-seatunnel-master-1 Up 9 days (healthy)
+76363f5f33ed data-os-dev-dolphinscheduler-master-1 Up 3 weeks (healthy)
+77a3a52417ab medical-platform-openmetadata-1 Up 2 days (healthy)
+84937742facd nervous_ishizaka Up 2 weeks
+84ba69f09d41 data-os-dev-scheduler-token-rotator-1 Up 2 weeks
+95f5f1f77a65 data-os-dev-data-api-1 Up 2 days (healthy)
+9cf644d8fb62 medical-platform-elasticsearch-1 Up 4 weeks (healthy)
+b30b1032b6e7 hapi-mdm-spike Up 10 days
+c630e68482f0 medical-platform-mysql-1 Up 4 weeks (healthy)
+ca9b72a0d0c2 jpom-server Up 4 weeks (healthy)
+d0944ef24e1d minifi-edge Up 8 days
+d4549553f838 magicops-console Up 3 weeks (healthy)
+d5d21f901019 dbgpt Up 4 weeks
+e1f20ec19b56 data-os-dev-mpi-service-1 Up 41 hours (healthy)
+e3f54a9fac21 data-os-dev-ai-ready-service-1 Up 2 days (healthy)
+e5cf57f6fc81 data-os-dev-control-plane-1 Up 2 days (healthy)
+e7a272178508 data-os-dev-notification-receiver-1 Up 2 weeks (healthy)
+facc3098edb1 medical-platform-gateway-1 Up 4 weeks
+fe44b41e69dd multica-postgres-1 Up 4 weeks (healthy)
+== remote runtime execution ==
+-- cli start --
+ Network openscope-v01_openscope-net Creating
+ Network openscope-v01_openscope-net Created
+ Volume openscope-v01_grafana-data Creating
+ Volume openscope-v01_grafana-data Created
+ Container openscope-v01-tempo Creating
+ Container openscope-v01-prometheus Creating
+ Container openscope-v01-loki Creating
+ Container openscope-v01-grafana Creating
+ Container openscope-v01-collector Creating
+ Container openscope-v01-collector Created
+ Container openscope-v01-tempo Created
+ Container openscope-v01-grafana Created
+ Container openscope-v01-prometheus Created
+ Container openscope-v01-loki Created
+ Container openscope-v01-tempo Starting
+ Container openscope-v01-prometheus Starting
+ Container openscope-v01-grafana Starting
+ Container openscope-v01-collector Starting
+ Container openscope-v01-loki Starting
+ Container openscope-v01-grafana Started
+ Container openscope-v01-prometheus Started
+ Container openscope-v01-tempo Started
+ Container openscope-v01-collector Started
+ Container openscope-v01-loki Started
+[1;32m[openscope][0m stack started: collector prometheus tempo loki grafana
+-- force recreate from current config, preserving volumes --
+ Container openscope-v01-prometheus Recreate
+ Container openscope-v01-tempo Recreate
+ Container openscope-v01-grafana Recreate
+ Container openscope-v01-loki Recreate
+ Container openscope-v01-collector Recreate
+ Container openscope-v01-collector Recreated
+ Container openscope-v01-prometheus Recreated
+ Container openscope-v01-grafana Recreated
+ Container openscope-v01-tempo Recreated
+ Container openscope-v01-loki Recreated
+ Container openscope-v01-prometheus Starting
+ Container openscope-v01-tempo Starting
+ Container openscope-v01-loki Starting
+ Container openscope-v01-grafana Starting
+ Container openscope-v01-collector Starting
+ Container openscope-v01-tempo Started
+ Container openscope-v01-prometheus Started
+ Container openscope-v01-loki Started
+ Container openscope-v01-collector Started
+ Container openscope-v01-grafana Started
+-- cli status --
+NAME                       IMAGE                                                                                                                                                                     COMMAND                  SERVICE      CREATED          STATUS         PORTS
+openscope-v01-collector    ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc   "/otelcol-contrib --…"   collector    21 seconds ago   Up 9 seconds   127.0.0.1:4317-4318->4317-4318/tcp, 55679/tcp
+openscope-v01-grafana      grafana/grafana:13.2.0@sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b                                                                            "/run.sh"                grafana      20 seconds ago   Up 9 seconds   127.0.0.1:13001->3000/tcp
+openscope-v01-loki         grafana/loki:3.7.6@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952                                                                                "/usr/bin/loki -conf…"   loki         20 seconds ago   Up 9 seconds   3100/tcp
+openscope-v01-prometheus   prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0                                                                           "/bin/prometheus --c…"   prometheus   20 seconds ago   Up 9 seconds   9090/tcp
+openscope-v01-tempo        grafana/tempo:3.0.3@sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5                                                                               "/tempo -config.file…"   tempo        20 seconds ago   Up 9 seconds
+---
+NAMES                      STATUS
+openscope-v01-grafana      Up 9 seconds
+openscope-v01-loki         Up 9 seconds
+openscope-v01-tempo        Up 9 seconds
+openscope-v01-prometheus   Up 9 seconds
+openscope-v01-collector    Up 9 seconds
+-- cli doctor --
+[doctor] component health:
+  OK   collector container running
+  OK   prometheus container running
+  OK   tempo container running
+  OK   loki container running
+  OK   grafana container running
+[doctor] backend readiness:
+  OK   collector API ready
+  OK   prometheus API ready
+  OK   tempo API ready
+  OK   loki API ready
+[doctor] OTLP listeners:
+  OK   OTLP/HTTP 127.0.0.1:4318 reachable
+  OK   OTLP/gRPC 127.0.0.1:4317 reachable
+[doctor] Grafana and provisioned assets:
+  OK   grafana API ready
+  OK   datasource openscope-prometheus health
+  OK   datasource openscope-tempo health
+  OK   datasource openscope-loki health
+  OK   dashboard openscope-overview provisioned
+[doctor] permissions, storage and BOM:
+  OK   .env permissions 600
+  OK   runtime data directory writable
+  OK   prometheus data volume writable
+  OK   tempo data volume writable
+  OK   loki data volume writable
+  OK   grafana data volume writable
+  OK   collector image matches BOM
+  OK   prometheus image matches BOM
+  OK   tempo image matches BOM
+  OK   loki image matches BOM
+  OK   grafana image matches BOM
+  OK   workspace disk available=193GiB usage=4%
+[doctor] ALL OK
+-- verify-v0.1 run 1 --
+
+=== preflight ===
+  ok stack running
+
+=== sample app (Java Agent present) ===
+  ok app up (pid 4006274)
+  PASS sample started under Java Agent yes
+
+=== traffic generation ===
+ok:200 fail:500 sensitive:200
+
+=== Tempo (traces) ===
+  PASS traces found in Tempo (n=5)
+  PASS fetched traceID=b0bbe1582cb0aadd6455487808853a80
+  PASS trace resource attr site.id
+  PASS trace resource attr project.id
+  PASS trace resource attr deployment.environment.name
+  PASS trace resource attr service.namespace
+  PASS trace resource attr service.name
+  PASS trace resource attr service.instance.id
+  PASS trace resource attr service.version
+  PASS failure span evidence present (500/ERROR across traces)
+
+=== Prometheus (metrics) ===
+  PASS target_info present for openscope-sample
+  PASS prom label site_id
+  PASS prom label project_id
+  PASS prom label deployment_environment_name
+  PASS prom label service_version
+  PASS prom label job
+  PASS prom label instance
+  PASS job carries service identity openscope-sample
+  PASS http_server_request_duration_seconds_count series found
+  PASS Dashboard RED rate query returns filtered data
+  PASS Dashboard RED error query returns filtered data
+  PASS Dashboard RED p95 query returns filtered data
+
+=== Loki (logs) ===
+  PASS log lines found in Loki (n=16)
+  PASS log trace_id matches Tempo traceID (AC-D7/AC-08, trace=b0bbe1582cb0aadd6455487808853a80 streams=1)
+
+=== Grafana provisioning and datasource health (AC-F1..F4) ===
+  PASS datasource openscope-prometheus health OK
+  PASS datasource openscope-tempo health OK
+  PASS datasource openscope-loki health OK
+  PASS Grafana Dashboard openscope-overview provisioned
+
+=== redaction (AC-E1..E3) ===
+./tools/verify-v0.1.sh: line 351: shasum: command not found
+  synthetic canary fingerprint:
+  FAIL E1 application path leaked header/body canary
+  PASS E2 trace control stored
+  PASS E2 trace sensitive attributes deleted
+  PASS E2 metric control stored
+  PASS E2 metric sensitive attributes deleted
+  PASS E2 log control stored
+  PASS E2 log sensitive attributes deleted
+
+=== summary ===
+  checks=36 passed=35 failed=1
+VERIFY-V0.1 FAILED (1 failed)
+remote execution exit=1
+== evidence & cleanup ==
+[1;32m[openscope][0m stack stopped (volumes preserved — AC-G4)
+OpenScope restored to initial stopped state
+non-openscope container snapshot (after):
+035a4475ac2c data-os-dev-quality-runner-1 Up 8 days (healthy)
+0ae7492b6654 medical-platform-keycloak-1 Up 4 weeks
+0d035843bb51 forgeops-gateway-1 Up 10 days
+138de8592b40 trusting_dirac Up 31 hours
+26e91847321c multica-frontend-1 Up 2 weeks
+33627c8fea4d multica-backend-1 Up 10 days
+3635879474e2 data-os-dev-dolphinscheduler-alert-1 Up 3 weeks (healthy)
+382cc12e1e4c medical-platform-keycloak-db-1 Up 4 weeks (healthy)
+398fe653e2c0 data-os-dev-portal-1 Up 2 days
+568c800e5201 data-os-dev-dolphinscheduler-api-1 Up 3 weeks (healthy)
+56b27c72a679 data-os-dev-dolphinscheduler-worker-1 Up 3 weeks (healthy)
+5d18386d2a75 data-os-dev-dolphinscheduler-postgresql-1 Up 3 weeks (healthy)
+6124916d73b3 medical-platform-superset-1 Up 9 days (healthy)
+613504ea1a8c data-os-dev-rustfs-1 Up 2 weeks (healthy)
+6a98a5f8843d medical-platform-nifi-1 Up 4 weeks
+6e8a365c219c data-os-dev-seatunnel-master-1 Up 9 days (healthy)
+76363f5f33ed data-os-dev-dolphinscheduler-master-1 Up 3 weeks (healthy)
+77a3a52417ab medical-platform-openmetadata-1 Up 2 days (healthy)
+84937742facd nervous_ishizaka Up 2 weeks
+84ba69f09d41 data-os-dev-scheduler-token-rotator-1 Up 2 weeks
+95f5f1f77a65 data-os-dev-data-api-1 Up 2 days (healthy)
+9cf644d8fb62 medical-platform-elasticsearch-1 Up 4 weeks (healthy)
+b30b1032b6e7 hapi-mdm-spike Up 10 days
+c630e68482f0 medical-platform-mysql-1 Up 4 weeks (healthy)
+ca9b72a0d0c2 jpom-server Up 4 weeks (healthy)
+d0944ef24e1d minifi-edge Up 8 days
+d4549553f838 magicops-console Up 3 weeks (healthy)
+d5d21f901019 dbgpt Up 4 weeks
+e1f20ec19b56 data-os-dev-mpi-service-1 Up 41 hours (healthy)
+e3f54a9fac21 data-os-dev-ai-ready-service-1 Up 2 days (healthy)
+e5cf57f6fc81 data-os-dev-control-plane-1 Up 2 days (healthy)
+e7a272178508 data-os-dev-notification-receiver-1 Up 2 weeks (healthy)
+facc3098edb1 medical-platform-gateway-1 Up 4 weeks
+fe44b41e69dd multica-postgres-1 Up 4 weeks (healthy)
+FAIL non-openscope snapshot changed
+remote runner finished rc=1

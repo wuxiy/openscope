@@ -46,5 +46,31 @@ else
   echo "  ok example password only in .env.example"
 fi
 
+echo "[verify-docs] plan and acceptance state consistency:"
+for plan in docs/plans/*-plan.md; do
+  [ -f "$plan" ] || continue
+  if sed -n '1,10p' "$plan" | grep -q 'Plan Status: completed'; then
+    if grep -Eq '^Status: (planned|in progress)|^- \[ \]|pending independent|Status Note: open' "$plan"; then
+      echo "  FAIL completed plan contains open phase/gate/evidence: $plan"
+      fail=1
+    else
+      echo "  ok completed plan is textually closed: $plan"
+    fi
+  fi
+done
+if sed -n '1,8p' docs/testing/v0.1-acceptance-checklist.md | grep -q 'Checklist Status:.*accepted'; then
+  if sed '/^## Final Verdict/,$d' docs/testing/v0.1-acceptance-checklist.md | grep -q '^- \[ \]'; then
+    echo "  FAIL accepted checklist still contains unchecked items"
+    fail=1
+  elif ! grep -q '^- \[x\] `accepted`' docs/testing/v0.1-acceptance-checklist.md; then
+    echo "  FAIL accepted checklist does not select the accepted verdict"
+    fail=1
+  else
+    echo "  ok accepted checklist has no unchecked A-I items and selects accepted verdict"
+  fi
+else
+  echo "  ok acceptance checklist is not claiming accepted closure"
+fi
+
 if [ "$fail" -eq 0 ]; then echo "[verify-docs] PASSED"; else echo "[verify-docs] FAILED"; fi
 exit "$fail"

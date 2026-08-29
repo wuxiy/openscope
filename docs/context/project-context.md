@@ -21,7 +21,7 @@ This file is the AI entry point. The following `docs/context/` companions are re
 ## Project Identity
 
 - Project name: OpenScope
-- Product type: 可观测性发行版/框架（OTel-native observability distribution）；**V0.1 standalone 已实施并验收**（2026-08-28）
+- Product type: 可观测性发行版/框架（OTel-native observability distribution）；V0.1 standalone 已实施并于 2026-08-29 验收 accepted
 - Primary users: cywu 个人自研项目（Family-OS/Health-OS/Teacher-OS/Everglow/XiangLiZhi）、公司内部（Data-OS 等）、政务/医疗交付项目
 - Documentation freshness: `fresh`（两份根目录架构文档 2026-08-27 完成评审与修订，AGE 上下文同日建立）
 
@@ -34,7 +34,7 @@ This file is the AI entry point. The following `docs/context/` companions are re
 ## Current Technical Baseline
 
 - Frontend stack: none（V1 无自研前端，可视化统一走 Grafana Provisioning）
-- Backend stack: **V0.1 已实施**（2026-08-28 验收通过）——Java 21 / Spring Boot 示例（examples/springboot-simple）+ OTel Java Agent 2.31.1（零侵入接入）；数据平面 opentelemetry-collector-contrib 0.159.0；后端 Prometheus v3.14.0（原生 OTLP Receiver）+ Grafana Tempo 3.0.3 + Loki 3.7.6（原生 OTLP 端点）+ Grafana 13.2.0；部署 standalone docker-compose
+- Backend stack: **V0.1 已实施、完整机器验收通过**——Java 21 / Spring Boot 示例（examples/springboot-simple）+ OTel Java Agent 2.31.1（零侵入接入）；数据平面 opentelemetry-collector-contrib 0.159.0；后端 Prometheus v3.14.0（原生 OTLP Receiver）+ Grafana Tempo 3.0.3 + Loki 3.7.6（原生 OTLP 端点）+ Grafana 13.2.0；部署 standalone docker-compose
 - Database/model source: none（不自研存储；组件版本权威 = Distribution BOM `distribution/bom.yaml`，见《OpenScope-技术架构》§20；仓库结构权威 = 《OpenScope-技术架构》§22）
 - 自研件：`examples/springboot-simple`（ProbeController ok/fail/sensitive 三端点）、`cli/openscope`（start/stop/status/doctor/version）、`tools/{resolve-bom,verify-docs,verify-v0.1,verify-v0.1-remote}.sh`、`distribution/standalone`（compose+config+env 模板）、`grafana/provisioning`（三 datasource + dashboard）
 
@@ -48,7 +48,7 @@ This file is the AI entry point. The following `docs/context/` companions are re
 | BOM integrity | `./tools/resolve-bom.sh --check` |
 | Documentation check | `./tools/verify-docs.sh` |
 | Compose static check | `docker compose --env-file distribution/standalone/.env -f distribution/standalone/docker-compose.yml config --quiet` |
-| V0.1 product integration（25 项信号/安全/相关性检查） | `AGENT_JAR=dependencies/opentelemetry-javaagent.jar ./tools/verify-v0.1.sh`（验收时 25/25 PASSED ×2） |
+| V0.1 product integration（信号/安全/相关性/Dashboard 检查） | `AGENT_JAR=dependencies/opentelemetry-javaagent.jar ./tools/verify-v0.1.sh`（2026-08-29 远端连续两次 `36/36`） |
 | Remote acceptance runner | `./tools/verify-v0.1-remote.sh`（SSH 到 172.16.65.59 全流程） |
 | Runtime doctor | `./cli/openscope doctor` |
 | start/stop/status/version | `./cli/openscope start|stop|status|version` |

@@ -35,7 +35,10 @@ load_bom_env() {
   export OPEN_SCOPE_BOM_LOKI_DIGEST="$(bom_get loki digest)"
   export OPEN_SCOPE_BOM_GRAFANA="$(bom_get grafana tag)"
   export OPEN_SCOPE_BOM_GRAFANA_DIGEST="$(bom_get grafana digest)"
-  for v in OPEN_SCOPE_BOM_OTELCOL_DIGEST OPEN_SCOPE_BOM_PROMETHEUS_DIGEST OPEN_SCOPE_BOM_TEMPO_DIGEST OPEN_SCOPE_BOM_LOKI_DIGEST OPEN_SCOPE_BOM_GRAFANA_DIGEST; do
+  export OPEN_SCOPE_BOM_QUERY_CURL="$(bom_get query-curl tag)"
+  export OPEN_SCOPE_BOM_QUERY_CURL_DIGEST="$(bom_get query-curl digest)"
+  export OPEN_SCOPE_QUERY_IMAGE="curlimages/curl:$OPEN_SCOPE_BOM_QUERY_CURL@$OPEN_SCOPE_BOM_QUERY_CURL_DIGEST"
+  for v in OPEN_SCOPE_BOM_OTELCOL_DIGEST OPEN_SCOPE_BOM_PROMETHEUS_DIGEST OPEN_SCOPE_BOM_TEMPO_DIGEST OPEN_SCOPE_BOM_LOKI_DIGEST OPEN_SCOPE_BOM_GRAFANA_DIGEST OPEN_SCOPE_BOM_QUERY_CURL_DIGEST; do
     [ -n "${!v}" ] || die "BOM digest missing for $v — run ./tools/resolve-bom.sh first (AC-A2 gate)"
   done
 }
@@ -75,20 +78,25 @@ check_ports() {
 }
 
 check_disk() {
-  local avail_gi use_pct
-  # Explicit escape hatch for acceptance runs on shared hosts whose root volume
-  # is near capacity (external constraint, checkpointed in the acceptance log).
-  # Default behavior remains fail-closed; bypass must be set deliberately.
-  if [ "${OPEN_SCOPE_ALLOW_DISK_GUARD_BYPASS:-0}" = "1" ]; then
-    log "disk guard bypassed via OPEN_SCOPE_ALLOW_DISK_GUARD_BYPASS=1 (acceptance escape hatch)"
-    return 0
-  fi
+  local stats avail_gi use_pct
   if command -v df >/dev/null 2>&1; then
-    avail_gi=$(df -kP / | awk 'NR==2 {printf "%d", $4/1024/1024}')
-    use_pct=$(df -kP / | awk 'NR==2 {gsub("%","",$5); print $5}')
+    stats="$(disk_stats)"
+    read -r avail_gi use_pct <<< "$stats"
     if [ "$avail_gi" -lt 10 ] || [ "$use_pct" -ge 90 ]; then
-      die "root disk guard: available=${avail_gi}GiB (<10) or usage=${use_pct}% (>=90)"
+      die "workspace disk guard ($STANDALONE_DIR): available=${avail_gi}GiB (<10) or usage=${use_pct}% (>=90)"
     fi
+  fi
+}
+
+disk_stats() {
+  df -kP "$STANDALONE_DIR" | awk 'NR==2 {gsub("%","",$5); printf "%d %d", $4/1024/1024, $5}'
+}
+
+file_mode() {
+  if stat -f '%Lp' "$1" >/dev/null 2>&1; then
+    stat -f '%Lp' "$1"
+  else
+    stat -c '%a' "$1"
   fi
 }
 
@@ -120,68 +128,155 @@ cmd_status() {
 }
 
 cmd_doctor() {
-  local rc=0
+  local rc=0 query_image grafana_url gid uid response mode stats avail_gi use_pct svc backend mount_mode running_image expected_image grafana_code grafana_auth_failed
   check_docker
-  if [ -f "$BOM_FILE" ]; then load_bom_env; fi
-  load_env 2>/dev/null || rc=1
+  load_env
+  load_bom_env
+  query_image="${OPEN_SCOPE_QUERY_IMAGE:-curlimages/curl:8.10.1}"
+  grafana_url="http://127.0.0.1:$GRAFANA_PORT"
+
+  doctor_ok() { echo "  OK   $*"; }
+  doctor_fail() { echo "  FAIL $*"; rc=1; }
+  internal_get() {
+    docker run --rm --network "${PROJECT}_openscope-net" --entrypoint /bin/sh \
+      "$query_image" -c 'curl -fsS --connect-timeout 3 --max-time 8 "$1" >/dev/null' sh "$1" 2>/dev/null
+  }
+
   echo "[doctor] component health:"
   for svc in collector prometheus tempo loki grafana; do
     if docker ps --format '{{.Names}}' | grep -q "^$PROJECT-$svc\$"; then
-      echo "  OK   $svc"
+      doctor_ok "$svc container running"
     else
-      echo "  FAIL $svc (not running)"; rc=1
+      doctor_fail "$svc container not running"
     fi
   done
-  # Grafana API checks (health + datasources + dashboard provisioned)
-  local gid grafana_url
-  gid=$(docker ps --format '{{.Names}}' | grep "^$PROJECT-grafana\$" || true)
-  if [ -n "$gid" ]; then
-    grafana_url="http://127.0.0.1:$GRAFANA_PORT"
-    # Grafana needs a few seconds after container start to finish init + provisioning.
-    # Poll /api/health (authenticated) up to 60s before failing (AC-G2 semantics).
-    gready=0
-    for _ in $(seq 1 30); do
-      if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
-           -H "Accept: application/json" "$grafana_url/api/health" >/dev/null 2>&1; then
-        gready=1; break
-      fi
+
+  echo "[doctor] backend readiness:"
+  for spec in \
+    'collector|http://collector:13133/' \
+    'prometheus|http://prometheus:9090/-/ready' \
+    'tempo|http://tempo:3200/ready' \
+    'loki|http://loki:3100/ready'; do
+    svc="${spec%%|*}"; url="${spec#*|}"; ready=0
+    if ! docker ps --format '{{.Names}}' | grep -q "^$PROJECT-$svc\$"; then
+      doctor_fail "$svc API skipped because container is not running"
+      continue
+    fi
+    for _ in $(seq 1 12); do
+      if internal_get "$url"; then ready=1; break; fi
       sleep 2
     done
+    [ "$ready" -eq 1 ] && doctor_ok "$svc API ready" || doctor_fail "$svc API not ready"
+  done
+
+  echo "[doctor] OTLP listeners:"
+  if curl -sS --connect-timeout 3 --max-time 5 -o /dev/null "http://127.0.0.1:4318/" 2>/dev/null; then
+    doctor_ok "OTLP/HTTP 127.0.0.1:4318 reachable"
+  else
+    doctor_fail "OTLP/HTTP 127.0.0.1:4318 unreachable"
+  fi
+  if (exec 3<>/dev/tcp/127.0.0.1/4317) 2>/dev/null; then
+    exec 3>&- 3<&-
+    doctor_ok "OTLP/gRPC 127.0.0.1:4317 reachable"
+  else
+    doctor_fail "OTLP/gRPC 127.0.0.1:4317 unreachable"
+  fi
+
+  echo "[doctor] Grafana and provisioned assets:"
+  gid=$(docker ps --format '{{.Names}}' | grep "^$PROJECT-grafana\$" || true)
+  if [ -n "$gid" ]; then
+    gready=0; grafana_auth_failed=0
+    for _ in $(seq 1 30); do
+      grafana_code="$(curl -sS -o /dev/null -w '%{http_code}' \
+        -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+        -H "Accept: application/json" "$grafana_url/api/user" 2>/dev/null || true)"
+      case "$grafana_code" in
+        200) gready=1; break ;;
+        401) grafana_auth_failed=1; break ;;
+        *) sleep 2 ;;
+      esac
+    done
     if [ "$gready" -eq 1 ]; then
-      echo "  OK   grafana api"
+      doctor_ok "grafana authenticated API ready"
+    elif [ "$grafana_auth_failed" -eq 1 ]; then
+      doctor_fail "grafana API authentication failed"
     else
-      echo "  FAIL grafana api (unauthorized or unreachable)"; rc=1
+      doctor_fail "grafana authenticated API unreachable"
     fi
-    # datasource + dashboard provisioning follows init; poll each up to 60s.
-    local uid dready ok
-    for uid in openscope-prometheus openscope-tempo openscope-loki; do
-      dready=0
+    if [ "$gready" -eq 1 ]; then
+      for uid in openscope-prometheus openscope-tempo openscope-loki; do
+        backend="${uid#openscope-}"
+        if ! docker ps --format '{{.Names}}' | grep -q "^$PROJECT-$backend\$"; then
+          doctor_fail "datasource $uid health skipped because $backend is not running"
+          continue
+        fi
+        dready=0
+        for _ in $(seq 1 30); do
+          response="$(curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
+               "$grafana_url/api/datasources/uid/$uid/health" 2>/dev/null || true)"
+          if printf '%s' "$response" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"(OK|ok|success)"'; then
+            dready=1; break
+          fi
+          sleep 2
+        done
+        [ "$dready" -eq 1 ] && doctor_ok "datasource $uid health" || doctor_fail "datasource $uid health"
+      done
+      ok=0
       for _ in $(seq 1 30); do
         if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
-             "$grafana_url/api/datasources/uid/$uid" >/dev/null 2>&1; then
-          dready=1; break
+             "$grafana_url/api/search?query=OpenScope%20Overview" 2>/dev/null | grep -q openscope-overview; then
+          ok=1; break
         fi
         sleep 2
       done
-      if [ "$dready" -eq 1 ]; then echo "  OK   datasource $uid"; else echo "  FAIL datasource $uid"; rc=1; fi
-    done
-    ok=0
-    for _ in $(seq 1 30); do
-      if curl -sf -u "${GF_ADMIN_USER:-admin}:${GF_ADMIN_PASSWORD:-}" \
-           "$grafana_url/api/search?query=OpenScope%20Overview" 2>/dev/null | grep -q openscope-overview; then
-        ok=1; break
+      if [ "$ok" -eq 1 ]; then
+        doctor_ok "dashboard openscope-overview provisioned"
+      else
+        doctor_fail "dashboard openscope-overview not found"
       fi
-      sleep 2
-    done
-    if [ "$ok" -eq 1 ]; then
-      echo "  OK   dashboard openscope-overview provisioned"
     else
-      echo "  FAIL dashboard openscope-overview not found"; rc=1
+      doctor_fail "datasource and dashboard checks skipped because Grafana authentication is unavailable"
     fi
+  else
+    doctor_fail "grafana API skipped because container is not running"
+    doctor_fail "datasource and dashboard checks skipped because Grafana is not running"
   fi
-  # BOM consistency
-  load_bom_env 2>/dev/null || rc=1
-  check_disk
+
+  echo "[doctor] permissions, storage and BOM:"
+  mode="$(file_mode "$ENV_FILE")"
+  case "$mode" in
+    400|600) doctor_ok ".env permissions $mode" ;;
+    *) doctor_fail ".env permissions $mode (expected 400 or 600)" ;;
+  esac
+  if [ -d "$STANDALONE_DIR/.data" ] && [ -w "$STANDALONE_DIR/.data" ]; then
+    doctor_ok "runtime data directory writable"
+  else
+    doctor_fail "runtime data directory missing or not writable"
+  fi
+  for svc in prometheus tempo loki grafana; do
+    mount_mode="$(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{if .RW}}rw{{else}}ro{{end}}{{end}}{{end}}' "$PROJECT-$svc" 2>/dev/null || true)"
+    printf '%s' "$mount_mode" | grep -q rw \
+      && doctor_ok "$svc data volume writable" \
+      || doctor_fail "$svc data volume not writable"
+  done
+  for spec in \
+    "collector|ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:$OPEN_SCOPE_BOM_OTELCOL@$OPEN_SCOPE_BOM_OTELCOL_DIGEST" \
+    "prometheus|prom/prometheus:$OPEN_SCOPE_BOM_PROMETHEUS@$OPEN_SCOPE_BOM_PROMETHEUS_DIGEST" \
+    "tempo|grafana/tempo:$OPEN_SCOPE_BOM_TEMPO@$OPEN_SCOPE_BOM_TEMPO_DIGEST" \
+    "loki|grafana/loki:$OPEN_SCOPE_BOM_LOKI@$OPEN_SCOPE_BOM_LOKI_DIGEST" \
+    "grafana|grafana/grafana:$OPEN_SCOPE_BOM_GRAFANA@$OPEN_SCOPE_BOM_GRAFANA_DIGEST"; do
+    svc="${spec%%|*}"; expected_image="${spec#*|}"
+    running_image="$(docker inspect --format '{{.Config.Image}}' "$PROJECT-$svc" 2>/dev/null || true)"
+    [ "$running_image" = "$expected_image" ] \
+      && doctor_ok "$svc image matches BOM" \
+      || doctor_fail "$svc image does not match BOM"
+  done
+  stats="$(disk_stats)"; read -r avail_gi use_pct <<< "$stats"
+  if [ "$avail_gi" -ge 10 ] && [ "$use_pct" -lt 90 ]; then
+    doctor_ok "workspace disk available=${avail_gi}GiB usage=${use_pct}%"
+  else
+    doctor_fail "workspace disk available=${avail_gi}GiB usage=${use_pct}%"
+  fi
   [ "$rc" -eq 0 ] && echo "[doctor] ALL OK" || echo "[doctor] FAILURES DETECTED (exit $rc)"
   exit "$rc"
 }
@@ -198,6 +293,7 @@ OpenScope distribution v0.1.0
   tempo: $OPEN_SCOPE_BOM_TEMPO@${OPEN_SCOPE_BOM_TEMPO_DIGEST}
   loki: $OPEN_SCOPE_BOM_LOKI@${OPEN_SCOPE_BOM_LOKI_DIGEST}
   grafana: $OPEN_SCOPE_BOM_GRAFANA@${OPEN_SCOPE_BOM_GRAFANA_DIGEST}
+  query helper: $OPEN_SCOPE_QUERY_IMAGE
 EOF
 }
 

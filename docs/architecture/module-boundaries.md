@@ -1,6 +1,6 @@
 # Module Boundaries
 
-> 当前基线：V0.1 standalone 已实施（2026-08-28 验收）。权威仓库结构：《OpenScope-技术架构》§22。
+> 当前基线：V0.1 standalone 已实施并于 2026-08-29 验收 accepted。权威仓库结构：《OpenScope-技术架构》§22。
 
 ## Module Families（已落地/规划）
 

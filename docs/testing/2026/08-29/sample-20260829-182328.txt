@@ -1,0 +1,35 @@
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[otel.javaagent 2026-08-29 18:24:51:230 +0800] [main] INFO io.opentelemetry.javaagent.tooling.VersionLogger - opentelemetry-javaagent - version: 2.31.1
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-08-29T18:24:58.333+08:00  INFO 4006274 --- [openscope-sample] [           main] d.o.sample.OpenScopeSampleApplication    : Starting OpenScopeSampleApplication v0.1.0-SNAPSHOT using Java 21.0.12 with PID 4006274 (/root/workspace/openscope-v0.1/examples/springboot-simple/target/springboot-simple-0.1.0-SNAPSHOT.jar started by root in /root/workspace/openscope-v0.1)
+2026-08-29T18:24:58.361+08:00  INFO 4006274 --- [openscope-sample] [           main] d.o.sample.OpenScopeSampleApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-08-29T18:24:59.840+08:00  INFO 4006274 --- [openscope-sample] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8090 (http)
+2026-08-29T18:24:59.893+08:00  INFO 4006274 --- [openscope-sample] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-29T18:24:59.894+08:00  INFO 4006274 --- [openscope-sample] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-08-29T18:24:59.945+08:00  INFO 4006274 --- [openscope-sample] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1516 ms
+2026-08-29T18:25:00.712+08:00  WARN 4006274 --- [openscope-sample] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-08-29T18:25:00.749+08:00  INFO 4006274 --- [openscope-sample] [           main] .s.b.a.l.ConditionEvaluationReportLogger :
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-08-29T18:25:00.783+08:00 ERROR 4006274 --- [openscope-sample] [           main] o.s.b.d.LoggingFailureAnalysisReporter   :
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8090 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8090 or configure this application to listen on another port.

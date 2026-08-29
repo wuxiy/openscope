@@ -26,10 +26,15 @@ public class ProbeController {
         throw e;
     }
 
-    /** Returns the caller-supplied canary value so a leak in request/response body capture would be detectable. */
+    /** Returns the caller-supplied canary without writing the raw value to application logs. */
     @GetMapping("/sensitive")
-    public String sensitive(@RequestHeader(value = "X-CANARY", required = false) String canary) {
-        log.info("probe /sensitive canary={}", canary);
+    public String sensitive(@RequestHeader(value = "Authorization", required = false) String authorization,
+                            @RequestHeader(value = "Cookie", required = false) String cookie,
+                            @RequestHeader(value = "X-Token", required = false) String token,
+                            @RequestHeader(value = "X-Password", required = false) String password,
+                            @RequestHeader(value = "X-CANARY", required = false) String canary) {
+        log.info("probe /sensitive called, authorizationPresent={}, cookiePresent={}, tokenPresent={}, passwordPresent={}, bodyCanaryPresent={}",
+                authorization != null, cookie != null, token != null, password != null, canary != null);
         return canary == null ? "no-canary" : canary;
     }
 }

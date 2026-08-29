@@ -1,0 +1,84 @@
+== preflight ==
+Linux 5.14.0-419.el9.x86_64 x86_64
+openjdk version "21.0.11" 2026-04-21 LTS
+Docker version 29.5.3, build d1c06ef
+Docker Compose version v5.1.4
+github.com/docker/buildx v0.34.1 e0b0e77d18d3379bc1e0d55f3b37de288d36fe47
+--workdir-filesystem--
+/dev/vdb        200G  6.0G  194G   3% /root
+--ports--
+ports free
+initial OpenScope running containers=0
+== payload sync (7d52e669bdbbdfb37e09bd29b8a9affe3a62603f) ==
+payload transferred
+payload manifest sha256=0509d1c5ed9582d3be9d24372b30ac04ade2bcb59f335dc5ceea934945a7c734
+payload git state=dirty (manifest identifies working-tree contents)
+payload-manifest-ok
+WARN agent jar not found locally at /Users/wuxi/workspace/base/openscope/dependencies/opentelemetry-javaagent.jar; attempting remote Maven Central download
+bbf83c151b6400709e2f225bdd07a04f839d9d13b8b93464241333fd25d3e3ba  opentelemetry-javaagent.jar
+agent sha verification:
+agent-sha-ok
+  ok digest match pom.xml
+  ok digest match distribution/bom.yaml
+  ok digest match distribution/standalone/docker-compose.yml
+  ok digest match tools/verify-v0.1.sh
+  ok digest match cli/openscope
+  ok digest match examples/springboot-simple/src/main/java/dev/openscope/sample/ProbeController.java
+  ok digest match grafana/dashboards/overview/openscope-overview.json
+== env ==
+== remote static and build gates ==
+-- executable prune guard --
+-- bom check --
+OpenScope BOM resolver — /root/workspace/openscope-v0.1/distribution/bom.yaml
+  ok otelcol-contrib sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+  ok prometheus sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+  ok tempo sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+  ok loki sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+  ok grafana sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b
+  ok query-curl sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b
+BOM digest check PASSED
+-- compose config --
+compose-config-ok
+-- verify-docs --
+[verify-docs] structure:
+  ok README.md
+  ok OpenScope-项目架构.md
+  ok OpenScope-技术架构.md
+  ok distribution/bom.yaml
+  ok distribution/standalone/docker-compose.yml
+  ok distribution/standalone/.env.example
+  ok distribution/standalone/config/collector/collector.yaml
+  ok distribution/standalone/config/prometheus/prometheus.yml
+  ok distribution/standalone/config/tempo/tempo.yaml
+  ok distribution/standalone/config/loki/loki.yaml
+  ok grafana/provisioning/datasources/prometheus.yml
+  ok grafana/provisioning/datasources/tempo.yml
+  ok grafana/provisioning/datasources/loki.yml
+  ok grafana/provisioning/dashboards/dashboards.yml
+  ok grafana/dashboards/overview/openscope-overview.json
+  ok cli/openscope
+  ok agents/java/manifest.yaml
+  ok tools/resolve-bom.sh
+[verify-docs] placeholder & forbidden literal scan:
+  ok no 'latest' image references in distribution configs
+  ok no default admin password in tracked config
+  ok example password only in .env.example
+[verify-docs] plan and acceptance state consistency:
+  ok acceptance checklist is not claiming accepted closure
+[verify-docs] PASSED
+-- mvnw runtime --
+Apache Maven 3.9.12 (848fbb4bf2d427b72bdb2471c22fced7ebd9a7a1)
+Maven home: /root/.m2/wrapper/dists/apache-maven-3.9.12/6068d197
+Java version: 21.0.11, vendor: Red Hat, Inc., runtime: /usr/lib/jvm/java-21-openjdk-21.0.11.0.10-2.el9.x86_64
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "5.14.0-419.el9.x86_64", arch: "amd64", family: "unix"
+-- mvnw clean verify --
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.15.0:compile (default-compile) on project springboot-simple: Fatal error compiling: error: release version 21 not supported -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+remote static/build exit=1
+REMOTE ACCEPTANCE FAILED before container operations

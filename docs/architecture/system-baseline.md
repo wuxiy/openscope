@@ -5,7 +5,7 @@
 
 ## Runtime Shape（当前）
 
-**V0.1 standalone 已实施**（2026-08-28 验收通过）。实现路径 `distribution/standalone/`：
+**V0.1 standalone 已实施并于 2026-08-29 验收 accepted。**实现路径 `distribution/standalone/`：
 
 ```text
 standalone   docker-compose（project: openscope-v01）
@@ -45,7 +45,7 @@ V0.1 已配套产品级验证链：
 
 - **静态**：`verify-docs.sh`（结构+占位符+敏感扫描）、`resolve-bom.sh --check`、上游配置官方校验（collector `validate` / `promtool check config` / loki `-verify-config`）、`bash -n` 全脚本
 - **构建**：`./mvnw -q -pl examples/springboot-simple -am verify`（Java 21）
-- **集成（25 项）**：`verify-v0.1.sh` → Tempo trace（成功/失败/资源属性）、Prometheus target_info+RED+六标签、Loki OTLP 日志、trace_id 关联、canary 三路脱敏——验收 25/25 PASSED ×2
+- **集成**：`verify-v0.1.sh` → Tempo trace（成功/失败/资源属性）、Prometheus target_info+真实 RED 六维过滤、Loki OTLP 日志、trace_id 关联、application non-capture + Collector 三信号独立脱敏、Grafana datasource health/Dashboard
 - **Distribution**：`verify-v0.1-remote.sh`（远端隔离 workdir + Compose project 全流程，含 H/G 持久化与 doctor 失败注入）
 
 后续规划：Unit（Starter/config/redaction 规则）→ Integration 扩展（springboot-postgresql/-redis/-kafka）→ Distribution Test（upgrade/backup）。
